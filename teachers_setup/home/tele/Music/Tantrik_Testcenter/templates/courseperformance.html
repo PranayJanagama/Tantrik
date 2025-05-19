@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Course Performance Report</title>
+    <script src="{{url_for('static', filename='/js/jquery-3.6.0.min.js')}}"></script>
+    <script src="{{url_for('static', filename='/js/jquery.table2csv.js')}}"></script>
+    <script src="{{url_for('static', filename='/js/jquery.tablesorter.js')}}"></script>
+    <link href="static/css/bootstrap1.min.css" rel="stylesheet">
+    <link href="static/css/fontawesome-6.6.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .table-container {
+            position: relative;
+            overflow-x: auto;
+            white-space: nowrap;
+            margin-top: 20px;
+        }
+
+        table {
+            border-collapse: separate;
+            border-spacing: 0;
+            width: 100%;
+        }
+
+        th,
+        td {
+            padding: 8px;
+            border: 1px solid #ddd;
+            text-align: left;
+        }
+
+        th.sticky,
+        td.sticky {
+            position: sticky;
+            background: #f8f9fa;
+            z-index: 2;
+        }
+
+        th.sticky:first-child,
+        td.sticky:first-child {
+            left: 0;
+            z-index: 3;
+            /* Higher priority for the first column */
+        }
+
+        th.sticky:nth-child(2),
+        td.sticky:nth-child(2) {
+            left: 130px;
+            z-index: 3;
+            /* Higher priority for the first column */
+        }
+
+        th.sticky:nth-last-child(2),
+        td.sticky:nth-last-child(2) {
+            right: 99px;
+            z-index: 3;
+            /* Higher priority for the first column */
+        }
+
+        th.sticky:last-child,
+        td.sticky:last-child {
+            right: 0;
+            z-index: 3;
+            /* Higher priority for the last column */
+        }
+
+        .table-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 10px;
+        }
+
+        .total-items {
+            font-weight: bold;
+        }
+
+        #loader {
+            display: none;
+            text-align: center;
+            margin: 20px 0;
+        }
+
+        #searchInput {
+            width: 200px;
+            margin-left: auto;
+            margin-bottom: 15px;
+        }
+
+        .no-data-row {
+            text-align: center;
+            font-weight: bold;
+            color: #6c757d;
+        }
+
+    </style>
+</head>
+
+<body>
+    <div class="container-fluid mt-5">
+        <h2 class="mb-4 text-primary"><i class="fas fa-graduation-cap me-2"></i>Course Performance Report</h2>
+
+        <div class="card mb-4">
+            <div class="card-body">
+                <div class="row g-3 mb-3">
+                    <div class="col-md-3">
+                        <label for="courseDropdown" class="form-label"><i class="fas fa-book me-2"></i>Course:</label>
+                        <select id="courseDropdown" class="form-select">
+                            <option value="">Select Course</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3 d-flex align-items-end">
+                        <button id="getReport" class="btn btn-primary w-50" disabled><i
+                                class="fas fa-search me-2"></i>Get</button>
+                    </div>
+                    <div class="col-md-3 d-flex align-items-end">
+                        <button id="exportCSV" class="btn btn-success" style="display: none;"><i
+                                class="fas fa-download me-2"></i>Export to CSV</button>
+                    </div>
+                    <!-- <button id="exportCSV" style="display: none;">Export</button> -->
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-body">
+                <input type="text" id="searchInput" class="form-control" placeholder="Search...">
+                <div class="table-container">
+                    <div id="loader">
+                        <i class="fas fa-spinner fa-spin"></i> Loading...
+                    </div>
+                    <table id="reportTable" class="table">
+                        <thead>
+                            <tr id="tableHeader">
+                                <th scope="col" class="sticky"><i class="fas fa-id-card me-2"></i>HT Number</th>
+                                <th scope="col" class="sticky"><i class="fas fa-user me-2"></i>Name</th>
+                                <!-- Dynamic columns will be added here -->
+                                <th scope="col" class="sticky"><i class="fas fa-star me-2"></i>Total</th>
+                                <th scope="col" class="sticky"><i class="fas fa-star me-2"></i>Avg(%)</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+                <div class="table-footer">
+                    <div class="total-items">
+                        Total : <span id="totalItems">0</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        $(document).ready(function () {
+            let studentData = []
+            function populateCourses() {
+                var user = '{{ user }}';
+                var token = '{{ token }}';
+                sessionStorage.setItem('user', user);
+                sessionStorage.setItem('token', token);
+
+                $.ajax({
+                    url: '/get_courses',
+                    type: 'GET',
+                    data: { user: user },
+                    success: function (response) {
+                        const courses = response.courses;
+                        $('#courseDropdown').empty().append('<option value="">Select Course</option>');
+                        courses.forEach(course => {
+                            $('#courseDropdown').append(`<option value="${course}">${course}</option>`);
+                        });
+                    }
+                });
+            }
+
+            populateCourses();
+
+            $('#courseDropdown').change(function () {
+                $('#getReport').prop('disabled', !$(this).val());
+            });
+
+
+            $('#getReport').click(function () {
+                const courseName = $('#courseDropdown').val();
+                $('#loader').show();
+                $('#reportTable tbody').empty();
+                document.getElementById("searchInput").value = '';
+                $.ajax({
+                    url: '/student_course_performance',
+                    method: 'GET',
+                    data: { course_name: courseName },
+                    success: function (response) {
+                        $('#loader').hide();
+                        const headerRow = $('#tableHeader');
+                        if (response.payload.data) {
+                            const { assignments, data } = response.payload;
+                            studentData = data
+                            // Add dynamic assignment columns to table header
+                            headerRow.find('th').not(':nth-child(-n+2)').remove(); // Keep first two and last two static columns
+                            assignments.forEach(assignment => {
+                                headerRow.append(`<th>${assignment}</th>`);
+                            });
+                            headerRow.append(`<th scope="col" class="sticky"><i class="fas fa-star me-2"></i>Total</th>`)
+                            headerRow.append(`<th scope="col" class="sticky"><i class="fas fa-star me-2"></i>Avg(%)</th>`)
+
+                            // Populate table body
+                            const tableBody = $('#reportTable tbody');
+                            data.forEach(student => {
+                                const row = $('<tr></tr>');
+                                row.append(`<td class="sticky">${student.htno}</td>`);
+                                row.append(`<td class="sticky">${student.name}</td>`);
+                                student.assignments.forEach(a => {
+                                    row.append(`<td>${a.score}</td>`);
+                                });
+                                row.append(`<td class="sticky">${student.total}</td>`);
+                                row.append(`<td class="sticky">${student.avg}</td>`);
+                                tableBody.append(row);
+                            });
+                            $("#reportTable").trigger("update");
+                            $("#reportTable").tablesorter({
+                                sortList: [[0, 0]], // Default sort by HT Number in ascending order
+                            });
+                            $('#totalItems').text(data ? data.length : 0);
+                            // Enable CSV export button
+                            $('#exportCSV').show();
+                        } else {
+                            alert('No data found for the selected assignment');
+                            $('#reportTable tbody').empty();
+                            $('#exportCSV').hide();
+                        }
+                    },
+                    error: function () {
+                        $('#loader').hide();
+                        alert('Error retrieving data');
+                    }
+                });
+            });
+
+            $('#exportCSV').click(function () {
+                const csvData = [];
+                $('#reportTable tr').each(function () {
+                    const row = [];
+                    $(this).find('th, td').each(function () {
+                        row.push($(this).text().trim());
+                    });
+                    csvData.push(row.join(','));
+                });
+                const csvContent = 'data:text/csv;charset=utf-8,' + csvData.join('\n');
+                const link = document.createElement('a');
+                link.setAttribute('href', encodeURI(csvContent));
+                link.setAttribute('download', `course_performance_${Date.now()}.csv`);
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            });
+            function renderTable(data) {
+                let tableContent = '';
+                const headerRow = $('#tableHeader');
+                const tableBody = $('#reportTable tbody');
+                tableBody.empty();
+
+                if (!data || data.length === 0) {
+                    tableBody.append(`
+                                    <tr class="no-data-row">
+                                        <td colspan="${headerRow.children().length}" class="sticky">
+                                            <p/>
+                                        </td>
+                                    </tr>`);
+                    // tableBody.append(tableContent)
+                } else {
+                    data.forEach(student => {
+                        const row = $('<tr></tr>');
+                        row.append(`<td class="sticky">${student.htno}</td>`);
+                        row.append(`<td class="sticky">${student.name}</td>`);
+                        student.assignments.forEach(a => {
+                            row.append(`<td>${a.score}</td>`);
+                        });
+                        row.append(`<td class="sticky">${student.total}</td>`);
+                        row.append(`<td class="sticky">${student.avg}</td>`);
+                        tableBody.append(row);
+                    })
+                }
+
+                $("#reportTable").trigger("update");
+                $('#totalItems').text(data ? data.length : 0);
+            }
+
+            $('#searchInput').on('input', function () {
+                const searchTerm = $(this).val().toLowerCase();
+                const filteredData = studentData.filter(student =>
+                    student.htno.toLowerCase().includes(searchTerm) ||
+                    student.name.toLowerCase().includes(searchTerm) ||
+                    student.avg != null && student.avg.toString().includes(searchTerm) ||
+                    student.total != null && student.total.includes(searchTerm) ||
+                    (student.assignments.some(ass => ass.assignment_name.includes(searchTerm) || ass.score.toString().includes(searchTerm)))
+                );
+                renderTable(filteredData);
+            });
+        });
+        $(window).on('unload', function () {
+            sessionStorage.clear();
+            document.getElementById("courseDropdown").value = '';
+        });
+    </script>
+</body>
+
+</html>

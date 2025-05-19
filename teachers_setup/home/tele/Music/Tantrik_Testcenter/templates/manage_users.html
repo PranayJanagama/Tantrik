@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manage Users & Courses</title>
+    <link rel="stylesheet" href="/static/css/bootstrap.min.css">
+    <link rel="stylesheet" href="/static/css/fontawesome-6.6.0/css/all.min.css">
+    <script src="/static/js/jquery-3.6.0.min.js"></script>
+    <script src="/static/js/bootstrap.bundle.min.js"></script>
+
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f4f6f9;
+            padding: 20px;
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 20px;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: auto;
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .btn-primary {
+            background-color: #007bff;
+            border: none;
+        }
+
+        .btn-primary:hover {
+            background-color: #0056b3;
+        }
+
+        .form-control {
+            margin-bottom: 15px;
+        }
+
+        label {
+            font-weight: bold;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        input[type="file" i] {
+            appearance: none;
+            cursor: default;
+            align-items: baseline;
+            text-overflow: inherit;
+            text-align: start !important;
+            white-space: pre;
+            padding-top: 5px;
+            width: 90%;
+            height: 90%;
+        }
+
+        .form-link {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            /* Match form font */
+            font-weight: normal;
+            color: #007bff;
+            /* Link color */
+            text-decoration: none;
+        }
+
+        .form-link .fa {
+            font-family: var(--fa-style-family, "Font Awesome 6 Free");
+            font-weight: var(--fa-style, 600);
+            /* Icon style is maintained */
+        }
+
+        .form-link:hover {
+            color: #0056b3;
+            text-decoration: underline;
+        }
+    </style>
+</head>
+
+<body>
+
+    <h1><i class="fas fa-users-cog"></i> Manage Users & Courses</h1>
+
+    <div class="container">
+        <form id="dynamic-form" method="post" enctype="multipart/form-data">
+            <!-- Action Selection -->
+            <div class="mb-3">
+                <label for="action">Select Action:</label>
+                <select id="action" class="form-control" required>
+                    <option value="" disabled selected>Select an action</option>
+                    <option value="student_search">Search student</Search>
+                    <option value="add_course">Add Course</option>
+                    <option value="publish_course">Publish Course</option>
+                    <option value="add_instructor">Add Instructor to Course</option>
+                    <option value="enroll_students">Enroll Students to Course</option>
+                    <option value="add_students">Add Students to Course</option>
+                    <option value="unenroll_students">Un-Enroll Students & Cleanup</option>
+                    </option>
+                </select>
+            </div>
+
+            <!-- Dynamic Fields -->
+            <div id="form-fields"></div>
+
+            <button type="submit" class="btn btn-primary w-100 hidden" id="submit-btn">Submit</button>
+        </form>
+    </div>
+
+    <!-- Response Modal -->
+    <div class="modal fade" id="responseModal" tabindex="-1" role="dialog" aria-labelledby="responseModalLabel"
+        aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content p-4">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <i class="fas fa-times"></i>
+                </button>
+                <p id="modal-message" class="mt-3"></p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        $(document).ready(function () {
+            var user = '{{ user }}'; // retrieve token from Flask index template variable
+            sessionStorage.setItem('user', user);
+
+            const formFields = $('#form-fields');
+            const submitBtn = $('#submit-btn');
+
+            $('#action').change(function () {
+                const action = $(this).val();
+                formFields.empty();
+                submitBtn.removeClass('hidden');
+
+                switch (action) {
+                    case 'student_search':
+                        formFields.append(`
+                            <label for="student_search">Search for Student:</label>
+                            <input type="text" id="student" name="student" class="form-control" required>
+                        `);
+                        break;
+                    case 'publish_course':
+                        formFields.append(`
+                            <label for="teacher_course_select">Course Name:</label>
+                            <select class="course-select form-control" name="course_name" required>
+                                <option value="" disabled selected>Select a course</option>
+                            </select>
+                        `);
+                        break;
+                    case 'add_course':
+                        formFields.append(`
+                            <p><strong style=color:red;>Note:</strong> It will only add course in local mysql db, but it will not create course in HUB.</p>
+                            <label for="course_name">Course Name:</label>
+                            <input type="text" id="course_name" name="course_name" class="form-control" required>
+                        `);
+                        break;
+
+                    case 'add_instructor':
+                        formFields.append(`
+                            <p><strong style=color:red;>Note:</strong> It will only add teacher in local mysql db.</p>
+                            <label for="teacher_course_select">Course Name:</label>
+                            <select class="course-select form-control" name="course_name" required>
+                                <option value="" disabled selected>Select a course</option>
+                            </select>
+                            <label for="instructor_name">Instructor Name:</label>
+                            <input type="text" id="instructor_name" name="instructor" class="form-control" required>
+                        `);
+                        break;
+
+                    case 'add_students':
+                        formFields.append(`
+                            <div class="mb-3 text-right">
+                                <a href="/download_sample_csv" class="form-link">
+                                    <i class="fa fa-download"></i> Download Sample CSV
+                                </a>
+                            </div>
+                            <label for="student_course_select">Course Name:</label>
+                            <select class="course-select form-control" name="course_name" required>
+                                <option value="" disabled selected>Select a course</option>
+                            </select>
+                            <label for="students_csv">CSV File:</label>
+                            <input type="file" id="students_csv" name="csv_file" class="form-control" accept=".csv" required>
+                            <label for="adminuser">Admin Username:</label>
+                            <input type="text" id="adminuser" name="adminuser" class="form-control" required>
+                            <label for="adminpassword">Admin Password:</label>
+                            <input type="text" id="adminpassword" name="adminpassword" class="form-control" required>
+                            <label for="hostip">Host IP (e.g., 127.0.0.1):</label>
+                            <input type="text" id="hostip" name="hostip" class="form-control" required>
+                        `);
+                        break;
+
+                    case 'enroll_students':
+                        formFields.append(`
+                            <p><strong style=color:red;>Note:</strong> It will only enroll existing students to course in hub.</p>
+                            <div class="mb-3 text-right">
+                                <a href="/download_sample_csv" class="form-link">
+                                    <i class="fa fa-download"></i> Download Sample CSV
+                                </a>
+                            </div>
+                            <label for="student_course_select">Course Name:</label>
+                            <select class="course-select form-control" name="course_name" required>
+                                <option value="" disabled selected>Select a course</option>
+                            </select>
+                            <label for="students_csv">CSV File:</label>
+                            <input type="file" id="students_csv" name="csv_file" class="form-control" accept=".csv" required>
+                        `);
+                        break;
+
+                    case 'unenroll_students':
+                        formFields.append(`
+                            <div class="mb-3 text-right">
+                                <a href="/download_sample_csv" class="form-link">
+                                   <i class="fa fa-download"></i> Download Sample CSV
+                                </a>
+                            </div>
+                            <label for="cleanup_course_select">Course Name:</label>
+                            <select class="course-select form-control" name="course_name" required>
+                                <option value="" disabled selected>Select a course</option>
+                            </select>
+                            <label for="cleanup_csv">CSV File:</label>
+                            <input type="file" id="cleanup_csv" name="csv_file" class="form-control" accept=".csv" required>
+                            <label for="adminuser">Admin Username:</label>
+                            <input type="text" id="adminuser" name="adminuser" class="form-control" required>
+                            <label for="adminpassword">Admin Password:</label>
+                            <input type="text" id="adminpassword" name="adminpassword" class="form-control" required>
+                            <label for="hostip">Host IP (e.g., 127.0.0.1):</label>
+                            <input type="text" id="hostip" name="hostip" class="form-control" required>
+                        `);
+                        break;
+                }
+                populateCourses();
+            });
+
+            // Mapping actions to their respective endpoints
+            const actionEndpoints = {
+                add_course: '/add_course',
+                add_instructor: '/addinstructor',
+                enroll_students: '/enrollstudentstocourse',
+                add_students: '/bulkaddstudents',
+                publish_course: '/publish_course',
+                unenroll_students: '/cleanup_students',
+                student_search: '/student_search',
+            };
+            // Handle Form Submission
+            $('#dynamic-form').on('submit', function (e) {
+                e.preventDefault();
+                const action = $('#action').val();
+                // const formData = new FormData(this);
+                // $.ajax({
+                //     url: actionEndpoints[action],
+                //     type: 'POST',
+                //     data: formData,
+                //     contentType: false,
+                //     processData: false,
+                //     success: function (response) {
+                //         displayResponseModal(response, action);
+                //         $('#dynamic-form')[0].reset();
+                //         formFields.empty();
+                //         submitBtn.addClass('hidden');
+                //     },
+                //     error: function () {
+                //         $('#modal-message').text('An error occurred. Please try again.');
+                //         $('#responseModal').modal('show');
+                //     }
+                // });
+                let ajaxOptions = {
+                    url: actionEndpoints[action],
+                    type: 'POST',
+                    success: function (response) {
+                        displayResponseModal(response, action);
+                        $('#dynamic-form')[0].reset();
+                        formFields.empty();
+                        submitBtn.addClass('hidden');
+                    },
+                    error: function () {
+                        $('#modal-message').text('An error occurred. Please try again.');
+                        $('#responseModal').modal('show');
+                    }
+                };
+
+                if (action === 'publish_course') {
+                    const courseName = $('select[name="course_name"]').val();
+                    ajaxOptions.contentType = 'application/json';
+                    ajaxOptions.data = JSON.stringify({ course_name: courseName });
+                } else {
+                    const formData = new FormData(this);
+                    ajaxOptions.data = formData;
+                    ajaxOptions.contentType = false;
+                    ajaxOptions.processData = false;
+                }
+
+                $.ajax(ajaxOptions);
+            });
+
+            function displayResponseModal(response, action) {
+                let message = `<strong>${response.message}</strong><br><br>`;
+                message += `<u>Details:</u><br>`;
+                if (action == 'student_search') {
+                    message += `👤 <strong>Username: ${response.details.rollno}</strong><br>`;
+                    message += `- Name: ${response.details.name}<br>`;
+                    message += `- Course: ${response.details.course}<br>`;
+                    message += `- Year: ${response.details.year}<br>`;
+                    message += `- Server: WN${response.details.server}<br>`;
+                    message += `- Hub User: ${response.details.hub_user}<br>`;
+                    message += `- HUB Groups: ${response.details.hub_groups}<br>`;
+                    message += `- System Folder: ${response.details.system_folder}<br>`;
+                }
+
+                if (action == 'bulkaddstudents' && response.summary) {
+                    message += `Total: ${response.summary.total} ✅ Successful: ${response.summary.success_count}<br>❌ Failed: ${response.summary.fail_count}<br><br>`;
+                    if (response.details && response.details.length > 0) {
+                        response.details.forEach(user => {
+                            message += `👤 <strong>${user.username} (${user.name})</strong><br>`;
+                            message += `- System User: ${user.steps.folder_create == "Success" || user.steps.folder_create == "Exists" ? '✅' : '❌'}<br>`;
+                            message += `- Signup: ${user.steps.signup == "Success" || user.steps.signup == "Exists" ? '✅' : '❌'}<br>`;
+                            message += `- Added to Hub: ${user.steps.add_to_hub == "Success" || user.steps.add_to_hub == "Exists" ? '✅' : '❌'}<br>`;
+                            message += `- Enrolled in Course: ${user.steps.enroll_course == "Success" || user.steps.enroll_course == "Exists" ? '✅' : '❌'}<br>`;
+                            message += `- Database update: ${user.steps.database == "Success" ? '✅' : '❌'}<br>`;
+                            if (user.error) {
+                                message += `⚠️ <em>Error:</em> ${user.error}<br>`;
+                            }
+                            message += `<hr>`; // Adds separation between users
+                        });
+                    }
+                }
+
+                $('#modal-message').html(message);
+                $('#responseModal').modal('show');
+            }
+
+            function populateCourses() {
+                var user = sessionStorage.getItem('user');
+                $.ajax({
+                    url: '/get_courses',
+                    type: 'GET',
+                    data: { user: user },
+                    success: function (response) {
+                        var courses = response.courses;
+                        $('.course-select').each(function () {
+                            var $select = $(this);
+                            $select.empty().append($('<option>', {
+                                value: '',
+                                text: 'Select Course',
+                                disabled: true,
+                                selected: true
+                            }));
+                            $.each(courses, function (index, course) {
+                                $select.append($('<option>', {
+                                    value: course,
+                                    text: course
+                                }));
+                            });
+                        });
+                    }
+                });
+            }
+
+            function resetValues() {
+                $('.course-select').each(function () {
+                    var $select = $(this);
+                    $select.empty().append($('<option>', {
+                        value: '',
+                        text: 'Select Course',
+                        disabled: true,
+                        selected: true
+                    }));
+                });
+                const fileInput = document.getElementById('students_csv_file');
+                if (fileInput) fileInput.value = '';
+            }
+
+            // Clear session storage and reset fields when the page unloads
+            $(window).on('unload', function () {
+                sessionStorage.clear();
+                resetValues();
+            });
+        });
+
+    </script>
+</body>
+
+</html>

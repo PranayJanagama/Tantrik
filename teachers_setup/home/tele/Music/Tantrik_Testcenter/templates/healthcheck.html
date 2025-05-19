@@ -1,0 +1,1248 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>System Health Monitor</title>
+    <link rel="stylesheet" href="/static/css/bootstrap.min.css">
+    <script src="/static/js/jquery-3.6.0.min.js"></script>
+    <script src="/static/js/bootstrap.bundle.min.js"></script>
+    <script src="/static/js/xlsx.full.min.js"></script>
+    <script src="/static/js/bootstrap.bundle.min.js"></script>
+    <link href="static/css/fontawesome-6.6.0/css/all.min.css" rel="stylesheet">
+    <!-- <script src="/static/js/slim.min.js"></script> -->
+
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f4f6f9;
+            padding: 20px;
+        }
+
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .select-box {
+            margin-bottom: 15px;
+        }
+
+        #getButton {
+            margin-top: -2px;
+            padding: 6px 20px;
+            font-size: 18px;
+        }
+
+        .table {
+            background-color: #fff;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        th {
+            background-color: #343a40;
+            color: white;
+            text-align: center;
+        }
+
+        .status-icon {
+            font-size: 18px;
+        }
+
+        .status-text {
+            font-weight: bold;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        /* Page loading spinner */
+        .page-loading {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.8);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        /* Loading spinner for cells */
+        .loading-spinner {
+            display: inline-block;
+            width: 1.5rem;
+            height: 1.5rem;
+            border: 0.15rem solid #f3f3f3;
+            border-top: 0.15rem solid #007bff;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        .page-loading .spinner-border {
+            width: 4rem;
+            height: 4rem;
+            color: #007bff;
+        }
+
+        /* Dataset tree styles */
+        .tree {
+            --spacing: 1.5rem;
+            --radius: 10px;
+        }
+
+        .tree li {
+            display: block;
+            position: relative;
+            padding-left: calc(2 * var(--spacing) - var(--radius) - 2px);
+        }
+
+        .tree ul {
+            margin-left: calc(var(--radius) - var(--spacing));
+            padding-left: 0;
+        }
+
+        .tree ul li {
+            border-left: 2px solid #ddd;
+        }
+
+        .tree ul li:last-child {
+            border-color: transparent;
+        }
+
+        .tree ul li::before {
+            content: '';
+            display: block;
+            position: absolute;
+            top: calc(var(--spacing) / -2);
+            left: -2px;
+            width: calc(var(--spacing) + 2px);
+            height: calc(var(--spacing) + 1px);
+            border: solid #ddd;
+            border-width: 0 0 2px 2px;
+        }
+
+        .tree summary {
+            display: block;
+            cursor: pointer;
+        }
+
+        .tree summary::marker,
+        .tree summary::-webkit-details-marker {
+            display: none;
+        }
+
+        .tree summary:focus {
+            outline: none;
+        }
+
+        .tree summary:focus-visible {
+            outline: 1px dotted #000;
+        }
+
+        .tree li::after,
+        .tree summary::before {
+            content: '';
+            display: block;
+            position: absolute;
+            top: calc(var(--spacing) / 2 - var(--radius));
+            left: calc(var(--spacing) - var(--radius) - 1px);
+            width: calc(2 * var(--radius));
+            height: calc(2 * var(--radius));
+            border-radius: 50%;
+            background: #ddd;
+        }
+
+        .tree summary::before {
+            z-index: 1;
+            background: #696 url('/static/icons/expand-collapse.svg') 0 0;
+        }
+
+        .tree details[open]>summary::before {
+            background-position: calc(-2 * var(--radius)) 0;
+        }
+
+        /* Custom styles for buttons */
+        .btn-primary {
+            background-color: #007bff;
+            border-color: #007bff;
+        }
+
+        .btn-reset {
+            background-color: #ff4d4d;
+            /* Light red background */
+            color: white;
+            /* White text */
+            border: none;
+            /* No border */
+            padding: 10px 20px;
+            /* Padding for size */
+            font-size: 16px;
+            /* Font size */
+            cursor: pointer;
+            /* Pointer on hover */
+            border-radius: 5px;
+            /* Rounded corners */
+            transition: background-color 0.3s;
+            /* Smooth transition */
+        }
+
+        .btn-reset:hover {
+            background-color: #ff1a1a;
+            /* Darker red on hover */
+        }
+
+
+        .btn-primary:hover {
+            background-color: #0056b3;
+        }
+
+        .select-box select {
+            width: 100%;
+        }
+
+        td button {
+            border: none;
+            background: none;
+            text-decoration: underline;
+            color: #007bff;
+            cursor: pointer;
+        }
+
+        td button:hover {
+            color: #0056b3;
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- Page loading spinner -->
+    <div class="page-loading d-none">
+        <div class="spinner-border text-primary" role="status">
+            <span class="sr-only">Loading...</span>
+        </div>
+    </div>
+
+    <h1 class="text-center my-4"><i class="fas fa-microchip"></i> System Health Monitor</h1>
+    <div class="container">
+        <div class="row">
+
+            <!-- Options dropdown (Task) -->
+            <div class="col-md-3 select-box" id="optionsSelectContainer">
+                <select id="optionsselect" class="form-control">
+                    <option value="">-- Select Task --</option>
+                    <option value="Published">Published</option>
+                    <option value="Start & Stop">Start & Stop Status</option>
+                    <option value="Agent">Agent Status</option>
+                    <option value="Users">Users</option>
+                    <option value="Data Sets">View Data Sets</option>
+                    <option value="GPU Memory">GPU Memory</option>
+                </select>
+            </div>
+
+            <!-- Course selection dropdown (hidden by default) -->
+            <div class="col-md-3 select-box hidden" id="courseSelectContainer">
+                <select id="courseSelect" class="form-control">
+                    <option class="loading-spinner" value="">-- Loading courses... --</option>
+                </select>
+            </div>
+
+            <!-- Assignment selection dropdown (hidden by default) -->
+            <div class="col-md-3 select-box hidden" id="folderSelectContainer">
+                <select id="folderSelect" class="form-control">
+                    <option value="">-- Select Assignment --</option>
+                </select>
+            </div>
+
+
+            <!-- Get button (hidden by default) -->
+            <div class="col-md-3 text-center hidden" id="getButtonContainer">
+                <button id="getButton" class="btn btn-primary btn-lg">Get</button>
+            </div>
+        </div>
+
+        <!-- Updated legends with emojis below the Get button, aligned to the left -->
+        <div class="row mb-4 justify-content-start">
+            <div class="col-md-3 text-left">
+                <div class="alert alert-success" role="alert">
+                    🟢 Up: <span id="onlineCount">0</span>
+                    <span id="onlineSpinner" class="loading-spinner d-none"></span>
+                </div>
+            </div>
+            <div class="col-md-3 text-left">
+                <div class="alert alert-danger" role="alert">
+                    🔴 Down: <span id="offlineCount">0</span>
+                    <span id="offlineSpinner" class="loading-spinner d-none"></span>
+                </div>
+            </div>
+
+            <!-- Reset All GPU Memory Button (initially hidden) -->
+            <div class="col-md-3 text-right mb-3">
+                <button id="resetAllGpuButton" class="btn btn-reset d-none custom-margin">
+                    <span class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true"></span>
+                    Reset All
+                </button>
+            </div>
+        </div>
+
+        <!-- Table for displaying machine data -->
+        <div class="row mt-4">
+            <div class="col-md-12">
+                <table id="pingTable" class="table table-bordered table-striped">
+                    <thead>
+                        <tr>
+                            <th style="width:5%"></th>
+                            <th style="width:20%">Nodes</th>
+                            <th style="width:12%">Status</th>
+                            <th id="dynamicHeader" class="selecteddetails"></th>
+                        </tr>
+
+                    </thead>
+                    <tbody>
+                        <!-- Data will be populated here -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- Modal for showing datasets in a tree structure -->
+    <div class="modal fade" id="datasetModal" tabindex="-1" role="dialog" aria-labelledby="datasetModalLabel"
+        aria-hidden="true">
+        <div class="modal-dialog modal-lg" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="datasetModalLabel">Dataset Structure</h5>
+                    <button type="button" class="btn btn-light" data-dismiss="modal">❌</button>
+                </div>
+                <div class="modal-body">
+                    <div class="tree" id="datasetTree">
+                        <!-- Dataset tree will be populated here -->
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal for displaying reset all GPU memory response -->
+    <div class="modal fade" id="resetGpuModal" tabindex="-1" role="dialog" aria-labelledby="resetGpuModalLabel"
+        aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="resetGpuModalLabel">Reset All GPU Memory Response</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body" id="resetGpuModalBody">
+                    <!-- Response will be populated here -->
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        $(document).ready(function () {
+            // Hide page loader once the content is ready
+            $('.page-loading').fadeOut();
+
+            // Fetch data from server and store in sessionStorage
+            function fetchData() {
+                const user = '{{ user }}';
+                sessionStorage.setItem('user', user);
+
+                const machinesdata = '{{ machines | tojson }}';  // Ensure this fetches all machine IPs from the server
+                sessionStorage.setItem('machines', machinesdata);
+            }
+            fetchData();
+
+            // Function to show and ping the table when the page loads
+            function showPingTable() {
+                const allMachines = JSON.parse(sessionStorage.getItem('machines'));
+                if (allMachines && Array.isArray(allMachines)) {
+                    renderPingTable(allMachines);  // Render the initial table
+
+                    // Reset counts before pinging
+                    resetCounts();
+
+                    // After rendering the table, call singleMachinePing for each IP
+                    allMachines.forEach(machineIp => {
+                        singleMachinePing(machineIp);  // Ping each machine and update the status in the row
+                    });
+                }
+            }
+
+            // Function to set status to loading (show spinner)
+            function updateCellToLoading(host) {
+                $('#pingTable tbody tr').each(function () {
+                    // Match the host using the data-host attribute of the button
+                    const ipCell = $(this).find('.ping-btn').data('host');
+                    if (ipCell === host) {
+                        // Update the status cell (column 3) with the loading spinner
+                        $(this).find('td').eq(2).html('<div class="loading-spinner"></div> Loading...');
+                    }
+                });
+            }
+
+            // Set status to error
+            function updateCellToError(host) {
+                $('#pingTable tbody tr').each(function () {
+                    const ipCell = $(this).find('td').eq(1).text().trim();
+                    if (ipCell === host) {
+                        $(this).find('td').eq(2).html('<i class="fas fa-times text-danger status-icon"></i> Error');  // Error state
+                    }
+                });
+            }
+
+            // Function to render the ping table
+            function renderPingTable(data) {
+                let tableBody = '';
+                data.forEach(function (item) {
+                    // Extract last two digits from the IP address (for display)
+                    let lastTwoDigits = item.split('.')[3].slice(-2);
+                    tableBody += `
+                            <tr>
+                                <td><input type="radio" name="row-radio" class="row-radio" data-ip="${item}"></td>
+                                <td><button class="ping-btn" data-host="${item}">Worker Node ${parseInt(lastTwoDigits)}</button></td>
+                                <td>
+                                    <!-- This will initially display the loading spinner -->
+                                    <div class="loading-spinner"></div> Loading...
+                                </td>
+                                <td>
+                                    <!-- Will be filled with detailed data -->
+                                </td>
+                            </tr>`;
+                });
+
+                $('#pingTable tbody').html(tableBody);
+
+                // Bind click event to IP address buttons to trigger ping
+                $('.ping-btn').click(function () {
+                    const host = $(this).data('host');
+                    singleMachinePing(host);    // Trigger ping for the machine
+                });
+
+            }
+
+            // Ping each machine and update its status
+            function singleMachinePing(host) {
+                updateCellToLoading(host);  // Show the loading spinner
+                $.ajax({
+                    url: '/singlemachineping',
+                    type: 'GET',
+                    data: { host: host },
+                    success: function (response) {
+                        const status = response.status;
+                        updateTableWithStatus(host, status);  // Update the table row with the result
+                        updateCounts();  // Update online and offline counts
+                    },
+                    error: function (error) {
+                        console.error(`Error pinging ${host}`, error);
+                        updateCellToError(host);  // Show error in case of failure
+                    }
+                });
+            }
+
+            let onlineCount = 0;
+            let offlineCount = 0;
+
+            function updateCounts() {
+                $('#onlineCount').text(Math.max(0, onlineCount));  // Ensure non-negative value
+                $('#offlineCount').text(Math.max(0, offlineCount));
+            }
+
+            function resetCounts() {
+                onlineCount = 0;
+                offlineCount = 0;
+                updateCounts();
+            }
+
+            // Update count and table based on the new status response
+            function updateTableWithStatus(host, status) {
+                $('#pingTable tbody tr').each(function () {
+                    // Match the host using the data-host attribute of the button
+                    const ipCell = $(this).find('.ping-btn').data('host');
+                    if (ipCell === host) {
+                        // Update status column in the table
+                        const statusIcon = status
+                            ? '🟢 Up'   // Green circle emoji for Up
+                            : '🔴 Down'; // Red circle emoji for Down
+
+                        // Update the status cell (column 3) with the status icon
+                        $(this).find('td').eq(2).html(statusIcon);
+
+                        // Reset counts before recalculating
+                        resetCounts();
+
+                        // Recalculate counts based on all rows
+                        $('#pingTable tbody tr').each(function () {
+                            const rowStatus = $(this).find('td').eq(2).text().trim();
+                            if (rowStatus.includes('Up')) {
+                                onlineCount++;
+                            } else if (rowStatus.includes('Down')) {
+                                offlineCount++;
+                            }
+                        });
+                        updateCounts();  // Finally update the counts
+                    }
+                });
+            }
+
+            // Call this function on page load to render the table and ping all machines
+            showPingTable();
+
+            // Function to update the header
+            function updateHeader() {
+                const selectedTask = $('#optionsselect').val();
+                const selectedCourse = $('#courseSelect').val();
+                const selectedAssignment = $('#folderSelect').val();
+
+                let headerText = 'Details';
+
+                // If "Data Sets" is selected, reset the header to default
+                if (selectedTask === 'Data Sets') {
+                    $('#dynamicHeader').text(''); // Reset to default header
+                    return; // Stop the function
+                }
+
+                // Reset the header if the task changes
+                if (selectedTask) {
+                    headerText = selectedTask; // Start with the selected task
+                }
+
+                // If a course is selected and the task is not "System Users,GPU Memory" add it to the header
+                if (selectedCourse && (selectedTask !== 'System Users' || selectedTask !== 'GPU Memory')) {
+                    headerText += ` - ${selectedCourse}`;
+                }
+
+                // If an assignment is selected and the task is not "System Users,GPU Memory" add it to the header
+                if (selectedAssignment && (selectedTask !== 'System Users' || selectedTask !== 'GPU Memory')) {
+                    headerText += ` - ${selectedAssignment}`;
+                }
+
+                // Update the header with the new text
+                $('#dynamicHeader').text(headerText);
+            }
+
+            // Attach event listeners to dropdowns
+            $('#optionsselect').change(updateHeader);
+            $('#courseSelect').change(updateHeader);
+            $('#folderSelect').change(updateHeader);
+
+
+            // Fetch courses and populate the courses dropdown
+            function coursecheck() {
+                $.ajax({
+                    url: '/get_courses',
+                    type: 'GET',
+                    data: { user: sessionStorage.getItem("user") }, // Replace with appropriate user if required
+                    success: function (response) {
+                        if (response.courses && response.courses.length > 0) {
+                            renderCourses(response.courses);
+                        } else {
+                            $('#courseSelect').html(`<option>No courses available.</option>`);
+                        }
+                    },
+                    error: function (error) {
+                        console.error('Error fetching courses:', error);
+                        $('#courseSelect').html(`<option>Error fetching courses. Please try again later.</option>`);
+                    }
+                });
+            }
+
+            // Function to render courses dropdown
+            function renderCourses(courses) {
+                let courseOptions = '<option value="">-- Select Course --</option>';
+                courses.forEach(function (course) {
+                    courseOptions += `<option value="${course}">${course}</option>`;
+                });
+                $('#courseSelect').html(courseOptions);
+                // $('#courseSelectContainer').show();
+            }
+
+            // Initial course check
+            coursecheck();
+
+            // --ASSIGMENTS-- //
+            // Fetch assignments based on selected course
+            function courseAssignments(selectedCourse) {
+                $.ajax({
+                    url: '/courseassignments',
+                    type: 'GET',
+                    data: { course_name: selectedCourse },
+                    success: function (response) {
+                        const allFolders = response.all_folders;
+                        if (allFolders && allFolders.length > 0) {
+                            let folderOptions = '<option value="">-- Select Assignment --</option>';
+                            allFolders.forEach(function (folder) {
+                                folderOptions += `<option value="${folder}">${folder}</option>`;
+                            });
+                            $('#folderSelect').html(folderOptions);
+                            $('#folderSelectContainer').show();
+                        } else {
+                            $('#folderSelectContainer').html(`<option>No Assignments found for the course!!</option>`);
+                            alert('No assignments available for this course.');
+                        }
+                    },
+                    error: function (error) {
+                        console.error('Error fetching assignments:', error);
+                        $('#folderSelectContainer').html('<p>Error fetching assignments. Please try again later.</p>');
+                    }
+                });
+            }
+
+            // Show course and assignment selection based on task, or directly show Get button for System Users
+            $('#optionsselect').change(function () {
+                const selectedTask = $(this).val();
+
+                // Reset and hide course and assignment dropdowns when task changes
+                $('#courseSelect').val(''); // Reset course dropdown
+                $('#folderSelect').val(''); // Reset assignment dropdown
+                $('#folderSelectContainer').addClass('hidden'); // Hide assignment dropdown
+                $('#getButtonContainer').addClass('hidden'); // Hide Get button
+
+                if (selectedTask !== '' && (selectedTask !== 'System Users' && selectedTask !== 'GPU Memory')) {
+                    $('#courseSelectContainer').removeClass('hidden');  // Show course dropdown based on task
+                } else {
+                    // Hide everything if task is System Users or empty
+                    $('#courseSelectContainer').addClass('hidden');
+                    $('#folderSelectContainer').addClass('hidden');
+                    $('#getButtonContainer').addClass('hidden');
+                }
+            });
+
+            // Handle task selection and display Get button directly for System Users
+            $('#optionsselect').change(function () {
+                const selectedTask = $(this).val();
+
+                if (selectedTask === 'GPU Memory') {
+                    $('#getButtonContainer').removeClass('hidden');   // Show Get button directly for System Users and GPU Memory
+                } else if (selectedTask !== '') {
+                    $('#getButtonContainer').addClass('hidden');      // Hide Get button until course and assignment are selected
+                } else {
+                    $('#getButtonContainer').addClass('hidden');      // Hide Get button if no task is selected
+                }
+            });
+
+            // Event listener for course selection to fetch corresponding assignments
+            $('#courseSelect').on('change', function () {
+                const selectedCourse = $(this).val();
+
+                // Reset assignment dropdown and hide Get button when course changes
+                $('#folderSelect').val(''); // Reset assignment dropdown
+                $('#getButtonContainer').addClass('hidden'); // Hide Get button
+
+                if (selectedCourse) {
+                    courseAssignments(selectedCourse);  // Fetch assignments based on selected course
+                    $('#folderSelectContainer').removeClass('hidden');  // Show assignment dropdown
+                } else {
+                    $('#folderSelectContainer').addClass('hidden');     // Hide assignment dropdown if no course is selected
+                }
+            });
+
+            // Show Get button when an assignment is selected
+            $('#folderSelect').change(function () {
+                const selectedAssignment = $(this).val();
+
+                if (selectedAssignment !== '') {
+                    $('#getButtonContainer').removeClass('hidden');   // Show Get button
+                } else {
+                    $('#getButtonContainer').addClass('hidden');      // Hide Get button if no assignment is selected
+                }
+            });
+
+            // Fetch published data and update table
+            function courseAssignmentsPublished(host, selectedCourse, selectedAssignment) {
+                $.ajax({
+                    url: '/checkpublished',
+                    type: 'GET',
+                    data: { host: host, course_name: selectedCourse, assignment_name: selectedAssignment },
+                    success: function (response) {
+                        const message = response.message;
+                        const status = response.status;
+
+                        // Update the table row with the result for the corresponding host
+                        $('#pingTable tbody tr').each(function () {
+                            const ipCell = $(this).find('.ping-btn').data('host');
+                            if (ipCell === host) {
+                                const publishedStatus = status
+                                    ? '<span class="text-success">Published ✅</span>'
+                                    : '<span class="text-danger">Not Published ❌</span>';
+
+                                const publishedData = `${message}, Status: ${publishedStatus}`;
+                                $(this).find('td').eq(3).html(publishedData);  // Replace the spinner with the result
+                            }
+                        });
+                    },
+                    error: function (error) {
+                        console.error('Error fetching published data:', error);
+
+                        // Update the table row with an error message
+                        $('#pingTable tbody tr').each(function () {
+                            const ipCell = $(this).find('.ping-btn').data('host');
+                            if (ipCell === host) {
+                                $(this).find('td').eq(3).html('<span class="text-danger">Error fetching data ❌</span>');
+                            }
+                        });
+                    }
+                });
+            }
+
+
+            // Fetch start & stop data and update table
+            function courseAssignmentsStartStop(host, selectedCourse, selectedAssignment) {
+                $.ajax({
+                    url: '/checkstartstop',
+                    type: 'GET',
+                    data: { host: host, course_name: selectedCourse, assignment_name: selectedAssignment },
+                    success: function (response) {
+                        const message = response.message;
+                        const status = response.status;
+                        // Update the table row with the result for the corresponding host
+                        $('#pingTable tbody tr').each(function () {
+                            const ipCell = $(this).find('.ping-btn').data('host');
+                            if (ipCell === host) {
+                                const publishedStatus = status
+                                    ? '<span class="text-success">Started ✅</span>'
+                                    : '<span class="text-danger">Stopped ❌</span>';
+
+                                const publishedData = `${message}, Status: ${publishedStatus}`;
+                                $(this).find('td').eq(3).html(publishedData);  // Replace the spinner with the result
+                            }
+                        });
+                    },
+                    error: function (error) {
+                        console.error('Error fetching published data:', error);
+
+                        // Update the table row with an error message
+                        $('#pingTable tbody tr').each(function () {
+                            const ipCell = $(this).find('.ping-btn').data('host');
+                            if (ipCell === host) {
+                                $(this).find('td').eq(3).html('<span class="text-danger">Error fetching data ❌</span>');
+                            }
+                        });
+                    }
+                });
+            }
+
+
+            // Fetch client data and update table
+            function courseAssignmentsClient(host, selectedCourse, selectedAssignment) {
+                $.ajax({
+                    url: '/client',
+                    type: 'GET',
+                    data: { host: host, course_name: selectedCourse, assignment_name: selectedAssignment },
+                    success: function (response) {
+                        const message = response.message;
+                        const status = response.status;
+                        // Update the table row with the result for the corresponding host
+                        $('#pingTable tbody tr').each(function () {
+                            const ipCell = $(this).find('.ping-btn').data('host');
+                            if (ipCell === host) {
+                                const publishedStatus = status
+                                    ? '<span class="text-success">✅</span>'
+                                    : '<span class="text-danger">Not❌</span>';
+
+                                const publishedData = `${message}, Status: ${publishedStatus}`;
+                                $(this).find('td').eq(3).html(publishedData);  // Replace the spinner with the result
+                            }
+                        });
+                    },
+                    error: function (error) {
+                        console.error('Error fetching client data for host:', host, error);
+                        // Update the table row with an error message
+                        $('#pingTable tbody tr').each(function () {
+                            const ipCell = $(this).find('.ping-btn').data('host');
+                            if (ipCell === host) {
+                                $(this).find('td').eq(3).html('<span class="text-danger">Error fetching data ❌</span>');
+                            }
+                        });
+                    }
+                });
+            }
+
+            // Fetch system user counts and update table
+            function SystemUserCounts(host, course_name) {
+                $.ajax({
+                    url: '/systemusercount',
+                    type: 'GET',
+                    data: { host: host, course_name: course_name },
+                    success: function (response) {
+                        const status = response.status;
+                        const count = response.count;
+                        const couorsestudents = response.couorsestudents;
+                        const message = response.message;
+
+                        // Find the row corresponding to the host and update the "Details" column
+                        $('#pingTable tbody tr').each(function () {
+                            const ipCell = $(this).find('.ping-btn').data('host');
+                            if (ipCell === host) {
+                                const detailsCell = $(this).find('td').eq(3);
+                                if (status) {
+                                    detailsCell.html(`${couorsestudents}/${count}`); // Show count if status is true
+                                } else {
+                                    detailsCell.html(`Message: ${message}`); // Show message if status is false
+                                }
+                            }
+                        });
+                    },
+                    error: function (error) {
+                        console.error('Error fetching system user counts for host:', host, error);
+                        // Update the row with an error message
+                        $('#pingTable tbody tr').each(function () {
+                            const ipCell = $(this).find('.ping-btn').data('host');
+                            if (ipCell === host) {
+                                $(this).find('td').eq(3).html('Error fetching API data ❌'); // Show error for this row
+                            }
+                        });
+                    }
+                });
+            }
+
+            function showgpumemory(gpuInfoCelllocal) {
+                // Select the <td> element
+                const gpuInfoCell = gpuInfoCelllocal;
+
+                // Extract and parse text content
+                const textContent = gpuInfoCell.text();
+
+                // Regex to match memory and utilization values
+                const regex = /(\d+) MiB, (\d+) MiB, (\d+) %/;
+                const match = textContent.match(regex);
+
+                if (match) {
+                    // Parse values from the regex match groups
+                    const memoryUsed = parseInt(match[1]);
+                    const memoryTotal = parseInt(match[2]);
+                    const utilizationGpu = parseInt(match[3]);
+
+                    // Calculate memory usage percentage
+                    const usagePercentage = (memoryUsed / memoryTotal) * 100;
+
+                    // Apply background color based on memory usage percentage
+                    if (usagePercentage <= 50) {
+                        gpuInfoCell.css("color", "green");
+                    } else if (usagePercentage <= 89) {
+                        gpuInfoCell.css("color", "orange");
+                    } else {//90 and above
+                        gpuInfoCell.css("color", "red");
+                    }
+                    // Update the <td> content with formatted information
+                    gpuInfoCell.html(`
+				<strong>Memory:</strong> ${memoryUsed} MiB / ${memoryTotal} MiB (${Math.round(usagePercentage * 100) / 100} %)<br>
+				<strong>Utilization:</strong> ${utilizationGpu} %<br>
+				<strong>Status:</strong> <span class="text-success">✅</span>
+			    `);
+                } else {
+                    console.error("Failed to extract GPU information from text content.");
+                }
+
+            }
+            function fetchGpuMemory(host) {
+                $.ajax({
+                    url: '/getgpumemory',
+                    type: 'GET',
+                    data: { host: host },
+                    success: function (response) {
+                        const status = response.status;
+                        const message = response.message;
+
+                        $('#pingTable tbody tr').each(function () {
+                            const ipCell = $(this).find('.ping-btn').data('host');
+                            if (ipCell === host) {
+                                const publishedStatus = status
+                                    ? '<span class="text-success">✅</span>'
+                                    : '<span class="text-danger">❌</span>';
+
+                                const publishedData = `${message}, Status: ${publishedStatus}`;
+                                $(this).find('td').eq(3).html(publishedData);  // Replace the spinner with the result
+                                showgpumemory($(this).find('td').eq(3));
+                            }
+                        });
+                    },
+                    error: function (error) {
+                        console.error('Error fetching gpu memory for host:', host, error);
+                        // Update the row with an error message
+                        $('#pingTable tbody tr').each(function () {
+                            const ipCell = $(this).find('.ping-btn').data('host');
+                            if (ipCell === host) {
+                                $(this).find('td').eq(3).html('Error fetching API data ❌'); // Show error for this row
+                            }
+                        });
+                    }
+                });
+            }
+
+            function fetchSingleGpuMemory(host) {
+                $.ajax({
+                    url: '/resetgpumemory',
+                    type: 'GET',
+                    data: { host: host },
+                    success: function (response) {
+                        const status = response.status;
+                        const message = response.message;
+
+                        $('#pingTable tbody tr').each(function () {
+                            const ipCell = $(this).find('.ping-btn').data('host');
+                            if (ipCell === host) {
+                                const publishedStatus = status
+                                    ? '<span class="text-success">✅</span>'
+                                    : '<span class="text-danger">❌</span>';
+
+                                const publishedData = `${message}, Status: ${publishedStatus}`;
+                                $(this).find('td').eq(3).html(publishedData);  // Replace the spinner with the result
+                            }
+                        });
+                    },
+                    error: function (error) {
+                        console.error('Error fetching gpu memory for host:', host, error);
+                        // Update the row with an error message
+                        $('#pingTable tbody tr').each(function () {
+                            const ipCell = $(this).find('.ping-btn').data('host');
+                            if (ipCell === host) {
+                                $(this).find('td').eq(3).html('Error fetching API data ❌'); // Show error for this row
+                            }
+                        });
+                    }
+                });
+            }
+
+            // /resetallgpumemory
+            function resetallGpuMemory(host, callback) {
+                $.ajax({
+                    url: '/resetallgpumemory',
+                    type: 'GET',
+                    data: { host: host },
+                    success: function (response) {
+                        const status = response.status;
+                        const message = response.message;
+
+                        $('#pingTable tbody tr').each(function () {
+                            const ipCell = $(this).find('.ping-btn').data('host');
+                            if (ipCell === host) {
+                                const resetAllStatus = status
+                                    ? '<span class="text-success">✅</span>'
+                                    : '<span class="text-danger">❌</span>';
+
+                                const resetAllData = `${message}, Status: ${resetAllStatus}`;
+                                $(this).find('td').eq(3).html(resetAllData);  // Replace the spinner with the result
+                            }
+                        });
+
+                        if (callback) callback(response);
+                    },
+                    error: function (error) {
+                        console.error('Error fetching gpu memory for host:', host, error);
+                        // Update the row with an error message
+                        $('#pingTable tbody tr').each(function () {
+                            const ipCell = $(this).find('.ping-btn').data('host');
+                            if (ipCell === host) {
+                                $(this).find('td').eq(3).html('Error fetching API data ❌'); // Show error for this row
+                            }
+                        });
+
+                        if (callback) callback({ message: 'Error fetching API data ❌' });
+                    }
+                });
+            }
+            // Fetch and display dataset structure in the modal
+            function courseAssignmentsDataset(host, selectedCourse) {
+                $.ajax({
+                    url: '/checkdataset',
+                    type: 'GET',
+                    data: { host: host, course_name: selectedCourse },
+                    success: function (response) {
+                        const message = response.message;
+                        const status = response.status;
+                        if (status) {
+                            // If status is true, process and display the dataset structure
+                            updateDatasetModal(host, message);
+                        } else {
+                            // If status is false, show an error message
+                            $('#datasetTree').html(`<p>Dataset Error: ${message}</p>`);
+                            $('#datasetModal').modal('show'); // Show the modal with the error message
+                        }
+                    },
+                    error: function (error) {
+                        console.error('Error fetching dataset data:', error);
+                        $('#datasetTree').html('<p>Error fetching dataset data. Please try again later.</p>');
+                        $('#datasetModal').modal('show'); // Show the modal with the error message
+                    }
+                });
+            }
+
+            function buildTree(paths) {
+                const root = {};
+                paths.forEach(path => {
+                    const parts = path.split('/').filter(part => part.trim() !== '');
+                    let current = root;
+                    parts.forEach((part, index) => {
+                        if (!current[part]) {
+                            current[part] = index === parts.length - 1 ? null : {};  // If it's the last part, it's a file
+                        }
+                        current = current[part];
+                    });
+                });
+                return root;
+            }
+
+            // Function to generate HTML for tree structure
+            function generateTreeHtml(tree) {
+                let html = '<ul>';
+                Object.keys(tree).forEach(key => {
+                    const child = tree[key];
+                    if (typeof child === 'object' && child !== null) {
+                        html += `<li><details open><summary>${key}</summary>${generateTreeHtml(child)}</details></li>`;  // Recursively generate HTML for children
+                    } else {
+                        html += `<li>${key}</li>`;  // If it's a file, just display it
+                    }
+                });
+                html += '</ul>';
+                return html;
+            }
+
+            // Function to display dataset in modal
+            function updateDatasetModal(host, message) {
+                const paths = message.split('\n').filter(path => path.trim() !== '');  // Split dataset paths by line
+                const tree = buildTree(paths);  // Build the tree structure from the paths
+
+                const treeHtml = generateTreeHtml(tree);  // Generate HTML for the tree structure
+                $('#datasetTree').html(treeHtml);  // Insert the generated HTML into the modal's body
+
+                $('#datasetModal').modal('show');  // Show the modal
+            }
+
+            // Function to add the dynamic column
+            function addDynamicColumn() {
+                // Check if the dynamic columns already exist
+                if ($('#gpuMemoryHeader').length === 0) {
+                    // Add headers for the dynamic columns
+                    $('#pingTable thead tr').append('<th id="gpuMemoryHeader">Reset GPU</th>');
+                    $('#pingTable thead tr').append('<th id="getGpuMemoryHeader">Get GPU Memory</th>');
+
+                    // Add a cell for each row in the table body
+                    $('#pingTable tbody tr').each(function () {
+                        const host = $(this).find('.ping-btn').data('host');
+
+                        // Add Reset GPU button
+                        $(this).append(`<td class="gpuMemoryCell"><button class="gpu-btn" data-host="${host}">Reset GPU</button></td>`);
+
+                        // Add Get GPU Memory button
+                        $(this).append(`<td class="getGpuMemoryCell"><button class="get-gpu-btn" data-host="${host}">Get GPU</button></td>`);
+                    });
+                } else {
+                    // Update existing rows with buttons if columns already exist
+                    $('#pingTable tbody tr').each(function () {
+                        const host = $(this).find('.ping-btn').data('host');
+
+                        // Update or add Reset GPU button
+                        const resetCell = $(this).find('.gpuMemoryCell');
+                        if (resetCell.length === 0) {
+                            $(this).append(`<td class="gpuMemoryCell"><button class="gpu-btn" data-host="${host}">Reset GPU</button></td>`);
+                        } else {
+                            resetCell.html(`<button class="gpu-btn" data-host="${host}">Reset GPU</button>`);
+                        }
+
+                        // Update or add Get GPU button
+                        const getGpuCell = $(this).find('.getGpuMemoryCell');
+                        if (getGpuCell.length === 0) {
+                            $(this).append(`<td class="getGpuMemoryCell"><button class="get-gpu-btn" data-host="${host}">Get GPU</button></td>`);
+                        } else {
+                            getGpuCell.html(`<button class="get-gpu-btn" data-host="${host}">Get GPU</button>`);
+                        }
+                    });
+                }
+
+                // Attach click event listener to the Reset GPU buttons
+                $('.gpu-btn').off('click').on('click', function () {
+                    const host = $(this).data('host');
+                    fetchSingleGpuMemory(host);  // Call the function to reset GPU memory
+                });
+
+                // Attach click event listener to the Get GPU buttons
+                $('.get-gpu-btn').off('click').on('click', function () {
+                    const host = $(this).data('host');
+                    fetchGpuMemory(host);  // Call the function to get GPU memory
+                });
+            }
+
+            // Function to remove the dynamic columns
+            function removeDynamicColumn() {
+                $('#gpuMemoryHeader').remove();
+                $('#getGpuMemoryHeader').remove();
+                $('#pingTable tbody tr .gpuMemoryCell').remove();
+                $('#pingTable tbody tr .getGpuMemoryCell').remove();
+            }
+
+            // Handle the "Get" button click
+            $('#getButton').click(function () {
+                const selectedCourse = $('#courseSelect').val();
+                const selectedAssignment = $('#folderSelect').val();
+                const selectedOption = $('#optionsselect').val();
+
+                // Call the appropriate function based on the selected option
+                switch (selectedOption) {
+                    case '':
+                        alert('Please select an option.');
+                        break;
+                    case 'Published':
+                        removeDynamicColumn();
+                        fetchAllRows(courseAssignmentsPublished, selectedCourse, selectedAssignment);
+                        break;
+                    case 'Start & Stop':
+                        removeDynamicColumn();
+                        fetchAllRows(courseAssignmentsStartStop, selectedCourse, selectedAssignment);
+                        break;
+                    case 'Agent':
+                        removeDynamicColumn();
+                        fetchAllRows(courseAssignmentsClient, selectedCourse, selectedAssignment);
+                        break;
+                    case 'Users':
+                        removeDynamicColumn();
+                        fetchAllRows(SystemUserCounts, selectedCourse);
+                        break;
+                    case 'GPU Memory':
+                        fetchAllRows(fetchGpuMemory);
+                        addDynamicColumn();
+                        break;
+                    case 'Data Sets':
+                        removeDynamicColumn();
+                        const selectedRadio = $('input[name="row-radio"]:checked');
+                        if (selectedRadio.length === 0) {
+                            alert('Please select a row.');
+                            return;
+                        }
+                        const selectedHost = selectedRadio.data('ip');
+                        courseAssignmentsDataset(selectedHost, selectedCourse);
+                        break;
+                    default:
+                        alert('Invalid option selected.');
+                        break;
+                }
+            });
+
+            // Helper function to fetch data for all rows and show a spinner
+            function fetchAllRows(fetchFunction, selectedCourse, selectedAssignment) {
+                $('#pingTable tbody tr').each(function () {
+                    // Retrieve the IP address from the data-host attribute of the button
+                    const host = $(this).find('.ping-btn').data('host');
+                    // Show a spinner while fetching data
+                    $(this).find('td').eq(3).html('<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Fetching...');
+
+                    // Call the passed function for each host (IP address)
+                    fetchFunction(host, selectedCourse, selectedAssignment);
+                });
+            }
+
+            // Function to reset all GPU memory and show response in modal
+            function resetAllGpuMemory() {
+                // Show the page loader
+                $('.page-loading').removeClass('d-none');
+
+                // Show the button loader
+                $('#resetAllGpuButton .spinner-border').removeClass('d-none');
+
+                $.ajax({
+                    url: '/resetallgpumemory',
+                    type: 'GET',
+                    success: function (response) {
+                        const status = response.status;
+                        let responseHtml = '';
+
+                        if (status) {
+                            try {
+                                // Manually parse the message string
+                                const messageString = response.message;
+                                const jsonString = messageString
+                                    .replace(/'/g, '"') // Replace single quotes with double quotes
+                                    .replace(/True/g, 'true') // Replace Python boolean with JavaScript boolean
+                                    .replace(/False/g, 'false'); // Replace Python boolean with JavaScript boolean
+
+                                const parsedMessage = JSON.parse(jsonString);
+                                const responseData = parsedMessage.response;
+
+                                if (Array.isArray(responseData)) {
+                                    responseData.forEach(item => {
+                                        const message = item.message;
+                                        const success = item.success;
+                                        const statusIcon = success ? '✅' : '❌';
+                                        responseHtml += `<p>${message} ${statusIcon}</p>`;
+                                    });
+                                } else {
+                                    responseHtml = '<p>Unexpected response format ❌</p>';
+                                }
+                            } catch (e) {
+                                console.error('Error parsing response message:', e);
+                                responseHtml = '<p>Error parsing response data ❌</p>';
+                            }
+                        } else {
+                            responseHtml = '<p>Error fetching data ❌</p>';
+                        }
+
+                        $('#resetGpuModalBody').html(responseHtml);
+                        $('#resetGpuModal').modal('show');
+                    },
+                    error: function (error) {
+                        console.error('Error fetching GPU memory reset data:', error);
+                        $('#resetGpuModalBody').html('<p>Error fetching API data ❌</p>');
+                        $('#resetGpuModal').modal('show');
+                    },
+                    complete: function () {
+                        // Hide the page loader
+                        $('.page-loading').addClass('d-none');
+
+                        // Hide the button loader
+                        $('#resetAllGpuButton .spinner-border').addClass('d-none');
+                    }
+                });
+            }
+
+            // Show or hide the Reset All GPU Memory button based on the selected option
+            $('#optionsselect').change(function () {
+                const selectedTask = $(this).val();
+                if (selectedTask === 'GPU Memory') {
+                    $('#resetAllGpuButton').removeClass('d-none');
+                } else {
+                    $('#resetAllGpuButton').addClass('d-none');
+                }
+            });
+
+            // Attach click event to the Reset All GPU Memory button
+            $('#resetAllGpuButton').click(function () {
+                if (confirm('Do you want to reset all agents GPU memory?')) {
+                    resetAllGpuMemory()
+                }
+            });
+        });
+        $(window).on('unload', function () {
+            sessionStorage.clear()
+            const fileInput = document.getElementById('optionsselect');
+            fileInput.value = ''; // Clear the file input value
+        });
+    </script>
+
+</body>
+
+</html>

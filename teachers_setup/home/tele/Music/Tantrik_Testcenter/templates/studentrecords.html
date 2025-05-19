@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Submission Records</title>
+    <script src="{{ url_for('static', filename='js/jquery-3.5.1.min.js') }}"></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/font-awesome.min.css') }}">
+    <link rel="stylesheet" href="/static/css/bootstrap.min.css">
+    <script src="/static/js/bootstrap.bundle.min.js"></script>
+    <script src="/static/js/jquery-3.6.0.min.js"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f4f6f9;
+            padding: 20px;
+        }
+
+        h2 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        /* Loading spinner */
+        .loader {
+            display: none;
+            border: 8px solid #f3f3f3;
+            border-top: 8px solid #007bff;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 2s linear infinite;
+            margin: 20px auto;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* Table Styling */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            background-color: #fff;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        th,
+        td {
+            padding: 12px;
+            text-align: left;
+            border: 1px solid #ddd;
+        }
+
+        th {
+            background-color: #343a40;
+            color: white;
+            text-align: center;
+        }
+
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+
+        td button {
+            border: none;
+            background: none;
+            text-decoration: underline;
+            color: #007bff;
+            cursor: pointer;
+        }
+
+        td button:hover {
+            color: #0056b3;
+        }
+    </style>
+</head>
+
+<body>
+    <div>
+        <h2>Submission Records</h2>
+        <table id="submissionTable">
+            <thead>
+                <tr>
+                    <th>Assignment</th>
+                    <th>Score</th>
+                    <th>Submitted On</th>
+                    <th>Feedback</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Submission records will be dynamically added here -->
+                <div class="loader"></div>
+            </tbody>
+        </table>
+    </div>
+    <script>
+        function displaySubmissions(submissions) {
+            const $tbody = $('#submissionTable tbody');
+            $tbody.empty();
+
+            if (!submissions || submissions.length === 0) {
+                $tbody.append('<tr><td colspan="3">No submissions found</td></tr>');
+                return;
+            }
+            console.log(sessionStorage.getItem("rollno"))
+            submissions.forEach(submission => {
+                $tbody.append(`
+                    <tr>
+                        <td>${submission.assignment}</td>
+                        <td>${submission.score}</td>
+                        <td>${submission.submittedon}</td>
+                        <td>
+            <a id="notebooklink" data-course_name="${sessionStorage.getItem("course")}" data-student="${sessionStorage.getItem("rollno")}" data-assignment_name="${submission.assignment}" class="disabled-link" href="http://172.20.36.35:8581/sendfeedbackfile?student=${sessionStorage.getItem("rollno")}&assignment_name=${submission.assignment}&course_name=${sessionStorage.getItem('course_name')}" target="_blank">                                feedback
+                            </a>
+                        </td>
+                    </tr>
+                `);
+            });
+        }
+
+        function getSubmissions() {
+            const $loader = $('.loader');
+            $loader.show();
+
+            $.ajax({
+                url: '/get_submissions',
+                type: 'GET',
+                data: {
+                    course_name: sessionStorage.getItem('course_name'),
+                    rollno: sessionStorage.getItem('rollno')
+                },
+                success: function (response) {
+                    displaySubmissions(response.payload);
+                },
+                error: function () {
+                    alert('Failed to retrieve submissions.');
+                },
+                complete: function () {
+                    $loader.hide();
+                }
+            });
+        }
+
+        $(document).ready(function () {
+            const payload = JSON.parse('{{ payload | tojson }}'); // Parse the payload object
+            if (payload) {
+                sessionStorage.setItem('rollno', payload.rollno || '');
+                sessionStorage.setItem('name', payload.name || '');
+                sessionStorage.setItem('course_name', payload.course || '');
+            }
+
+            getSubmissions();
+        });
+
+        $(window).on('unload', function () {
+            sessionStorage.clear();
+        });
+    </script>
+</body>
+
+</html>

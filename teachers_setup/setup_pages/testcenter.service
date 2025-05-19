@@ -1,0 +1,16 @@
+[Unit]
+Description=Jupyterhub Testcenter Application
+After=network.target
+
+[Service]
+User=root
+WorkingDirectory=/home/tele/Music/Tantrik_Testcenter
+Environment="PATH=/root/.nvm/versions/node/v16.17.1/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin:/home/kmitdgx/.local/bin"
+ExecStart=flask run --host=0.0.0.0 --port=8581 --debug
+Restart=on-failure
+RestartSec=10
+StandardOutput=file:/var/log/testcenter-access.log
+StandardError=file:/var/log/testcenter-error.log
+
+[Install]
+WantedBy=multi-user.target

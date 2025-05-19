@@ -1,0 +1,3623 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jupyterhub Test Centre</title>
+
+    <!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.0/xlsx.full.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script> 
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">  -->
+    <link rel="stylesheet" href="/static/css/font-awesome.min.css">
+    <script src="{{url_for('static', filename='/js/jquery-3.6.0.min.js')}}"></script>
+    <script src="{{url_for('static', filename='/js/xlsx.full.min.js')}}"></script>
+    <script type="text/javascript" src="{{url_for('static', filename='/js/jquery.tablesorter.js')}}"></script>
+    <!-- <link rel="stylesheet" href="testcentercss.css"> -->
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            background-color: #f2f2f2;
+            /* Set a light gray background color */
+            margin: 0;
+            /* Remove default margins */
+            padding: 0;
+            /* Remove default padding */
+        }
+
+        h1 {
+            margin-top: 50px;
+            color: #333;
+            /* Darken the title color */
+        }
+
+
+
+        #controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin: 20px 10%;
+        }
+
+        #courseDropdown {
+            /* padding: 8px; */
+            margin-top: 9px;
+            font-size: 15px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            background-color: #fff;
+        }
+
+        #selectedAssignmentLabel {
+            font-size: 16px;
+        }
+
+        #selectedAssignmentContainer {
+            width: 300px;
+            /* Fixed width to prevent shifting */
+            text-align: left;
+        }
+
+        table {
+            margin: 20px auto;
+            border-collapse: collapse;
+            width: 80%;
+            background-color: #fff;
+            /* Set a white background color */
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            /* Add a subtle shadow */
+        }
+
+        th,
+        td {
+            padding: 12px;
+            border: 1px solid #ddd;
+            text-align: center;
+        }
+
+        .publishBtn .startBtn,
+        .stopBtn {
+
+            background-color: #4CAF50;
+            /* Green color for start button */
+            color: #fff;
+            /* White text color */
+            border: none;
+            padding: 8px 16px;
+            /* Add padding */
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 14px;
+            border-radius: 4px;
+            /* Add border radius */
+            cursor: pointer;
+            transition: background-color 0.3s;
+            /* Smooth transition */
+            margin: 4px;
+        }
+
+
+
+        .publishBtn .startBtn,
+        .stopBtn {
+            cursor: pointer;
+            border-radius: 0;
+            /* Set border-radius to 0 for sharp edges */
+        }
+
+        /* Update button colors */
+        .startBtn {
+            background-color: #006400;
+            /* Dark green color */
+            padding: 6px 32px;
+            cursor: pointer;
+            margin: auto 0.5em;
+        }
+
+        .stopBtn {
+            background-color: #8B0000;
+            /* Dark red color */
+            padding: 6px 32px;
+            cursor: pointer;
+            margin: auto 0.5em;
+        }
+
+        .publishBtn {
+            background-color: #737773;
+            /* Dark green color */
+            padding: 6px 32px;
+            cursor: pointer;
+            margin: auto 0.5em;
+        }
+
+        /* Styles for tabs */
+        .tab {
+            overflow: hidden;
+            border-bottom: 1px solid #ccc;
+            background-color: #fff;
+            margin-bottom: 10px;
+            width: 99%;
+            margin-top: 6px;
+        }
+
+        .tab button {
+            background-color: inherit;
+            float: left;
+            border: none;
+            outline: none;
+            cursor: pointer;
+            padding: 14px 200px;
+            transition: background-color 0.3s;
+            font-size: 17px;
+            margin-right: 1px;
+            margin-left: 170px;
+            border-bottom: 2px solid transparent;
+            /* Add a transparent border bottom */
+        }
+
+        .tab button:hover {
+            background-color: #f2f2f2;
+            /* Light gray background color on hover */
+        }
+
+        /* Add color to active released tab */
+        #releasedTab.active {
+            background-color: #4CAF50;
+            color: #fff;
+            border-bottom: 2px solid #4CAF50;
+            /* Green border bottom for active tab */
+        }
+
+        /* Add color to active unreleased tab */
+        #unreleasedTab.active {
+            background-color: #007bff;
+            color: #fff;
+            border-bottom: 2px solid #007bff;
+            /* Blue border bottom for active tab */
+        }
+
+        .tab button.active {
+            background-color: #007bff;
+            color: #fff;
+        }
+
+        #burgerIcon {
+            /* position: fixed; */
+            top: 20px;
+            /* Adjust as needed */
+            right: 20px;
+            /* Adjust as needed */
+            cursor: pointer;
+            color: black;
+        }
+
+        .burger {
+            font-size: 20px;
+            color: white;
+            /* Adjust as needed */
+        }
+
+        /* CSS */
+        .loading {
+            position: relative;
+            overflow: hidden;
+            /* Prevents the spinner from overflowing outside the button */
+        }
+
+        .loading::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 20px;
+            height: 20px;
+            margin: -10px;
+            /* Adjusts the position to center the spinner */
+            border: 2px solid #fff;
+            border-top-color: transparent;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+
+        #dashboardBoxes {
+            display: none;
+            justify-content: space-around;
+            margin: 20px auto;
+            /* Center the dashboard boxes */
+            width: 80%;
+            /* Match the width of the table */
+        }
+
+        .dashboardBox {
+            text-align: center;
+            padding: 15px;
+            border: 1px solid #ccc;
+            width: 80px;
+            margin: 0 5px;
+            background-color: #ffffff;
+            color: #333333;
+        }
+
+        .dashboardIcon {
+            font-size: 24px;
+            margin-bottom: 7px;
+        }
+
+        .dashboardLabel {
+            font-size: 14px;
+        }
+
+        .totalStudents {
+            /* background-color: black; */
+            color: black;
+        }
+
+        .fullyGraded {
+            background-color: #28a745;
+            color: #ffffff;
+        }
+
+        .partiallyGraded {
+            background-color: #ffc107;
+            color: #ffffff;
+        }
+
+        .totalsubmitted {
+            background-color: #dc3545;
+            color: #ffffff;
+        }
+
+        .notSubmitted {
+            background-color: #6c757d;
+            color: #ffffff;
+        }
+
+        #gradesTable {
+            width: 99%;
+            margin-bottom: 5px !important;
+        }
+
+        #refreshTimestamp {
+            font-family: Arial, sans-serif;
+            font-size: 14px;
+            color: #333;
+            /* Adjust color if needed */
+            /* Add any other styles you need */
+        }
+
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0, 0, 0, 0.5);
+        }
+
+        .modal-content {
+            background-color: #fff;
+            margin: 15% auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 80%;
+            max-width: 500px;
+            text-align: center;
+            border-radius: 5px;
+        }
+
+        .close-button {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+        }
+
+        .close-button:hover,
+        .close-button:focus {
+            color: black;
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+        .disabled-link {
+            /* cursor: not-allowed;*/
+        }
+
+        #downloadButtonContainer {
+            margin-top: 20px;
+            margin-right: 20px;
+        }
+
+        #downloadExcelBtn,
+        .tab {
+            display: none;
+        }
+
+        .statusLoader {
+            /* color: rgb(12, 12, 12); */
+            font-weight: bold;
+            font-size: 15px;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- <h1>Jupyterhub Test Centre</h1> -->
+    <div class="container container-demo">
+
+        <!--------------- statusbar ------------------------->
+        <div class="current-activity row">
+            <div class="col-md-5 act-label">ACTIVITY NAME : <span class="progress-activity"
+                    id="selectedAssignmentName"></span></div>
+            <!-- <div class="col-md-5 act-name">STATUS :<span class="progress-activity-status"></span></div> -->
+        </div>
+
+
+        <div class="row status-row non-kmit-status">
+
+            <div class="status-div">
+                <div class="status-divs">
+                    <label for="courseDropdown">
+                        <!-- <span id="courseLabel">Select Course:</span> -->
+                        <select id="courseDropdown">
+                            <option value="select-course"> select-course</option>
+                        </select>
+                    </label>
+                </div>
+
+                <div class="login-count-div status-divs " title="Active Students">
+                    <div class="status-numbers logincount-status-numbers">
+                        <div class="login-count-indicator indicator"><span class="status-label">A</span></div>
+                        <div class="statuscounts"><span class="totalStudents">--</span> </div>
+                    </div>
+                </div>
+
+                <div class="csubCount-div status-divs " title="Submitted">
+                    <div class="status-numbers csubCount-status-numbers">
+                        <div class="csubCount-indicator indicator"><span class="status-label">S</span></div>
+                        <div class="statuscounts"><span class="csubCount" id="totalsubmitted">--</span> <span
+                                class="of-lable"></span> <span class="totalStudents2"></span></div>
+                    </div>
+                </div>
+
+                <div class="cgradeCount-div status-divs " title="Graded">
+                    <div class="status-numbers cgradeCount-status-numbers">
+                        <div class="cgradeCount-indicator indicator"><span class="status-label">G</span></div>
+                        <div class="statuscounts"><span class="cgradeCount" id="partiallyGraded">--</span>
+                            <span class="of-lable"></span> <span class="totalStudents2"></span>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="btngreenStars" class="cstarCount-div status-divs " title="GreenStars">
+                    <div class="status-numbers cstarCount-status-numbers">
+                        <div class="cstarCount-indicator indicator"><i aria-hidden="true"
+                                class="fa  fa-star star-img "></i></div>
+                        <div class="statuscounts"><span class="cstarCount" id="fullyGraded">--</span>
+                            <span class="of-lable"></span> <span class="totalStudents2"></span>
+                        </div>
+                    </div>
+                </div>
+
+
+                <!-- <div id="btnredStars" class="crstarCount-div status-divs" title="Not Submitted">
+                    <div class="status-numbers crstarCount-status-numbers">
+                        <div class="crstarCount-indicator indicator"><span class="status-label">NS</span></div>
+                        <div class="statuscounts"><span class="crstarCount" id="notSubmitted">--</span>
+                            <span class="of-lable"></span> <span class="totalStudents2"></span>
+                        </div>
+                    </div>
+                </div> -->
+
+                <!-- <div id="status-div" class="status-divs "> -->
+
+                <div class="status-divs" style="float: right;">
+                    <button id="reset-logins" class="btn btn-color-primary">Reset Testcenter</button>
+                </div>
+
+
+            </div>
+        </div>
+        <!-------------- statusend  -------------------->
+
+        <div class="tabbable tabs-left">
+
+            <ul class="testcenter-tabs nav nav-tabs " style="list-style-type: none;">
+                <li id="activities-info" class="active"><a href="#a" data-toggle="tab">Activities
+                        <!-- <i class="fa fa-angle-double-right" aria-hidden="true"></i></a> -->
+                    </a> </li>
+
+                <li id="students-status"><a href="#b" data-toggle="tab">Students
+                        <!-- <i class="fa fa-angle-double-right" aria-hidden="true"></i></a> -->
+                    </a> </li>
+                <li id="datasets-page"><a href="/datasetpage" data-toggle="tab" target="_blank">Datasets
+                        <!-- <i class="fa fa-angle-double-right" aria-hidden="true"></i>
+                        --></a>
+                </li>
+                <li id="clustermonitor-page"><a href="/healthcheck" data-toggle="tab" target="_blank">Cluster Monitor
+                        <!-- <i class="fa fa-angle-double-right" aria-hidden="true"></i>
+                    --></a>
+                </li>
+                <li id="submissionseport-page"><a href="/submissionseport" data-toggle="tab" target="_blank">
+                        Submission Report
+                        <!-- <i class="fa fa-angle-double-right" aria-hidden="true"></i>
+                --></a>
+                </li>
+                <li id="courseperformance-page"><a href="/courseperformance" data-toggle="tab" target="_blank">Course
+                        Performance
+                        <!-- <i class="fa fa-angle-double-right" aria-hidden="true"></i>
+            --></a>
+                </li>
+            </ul>
+            <div class="tab-content">
+                <div class="tab-pane active" id="a">
+
+
+
+                    <div class="tab">
+                        <button id="releasedTab" class="tablinks"
+                            onclick="handleTabClick('releasedTab');">Assignments</button>
+                        <button id="unreleasedTab" class="tablinks" onclick="handleTabClick('releasedTab');"></button>
+                    </div>
+
+                    <table id="activitytable" style="width:99%; margin-bottom:8px!important">
+                        <thead>
+                            <tr>
+                                <th>Select</th>
+                                <th>Activity Names</th>
+                                <th>Status</th>
+                                <th>Action</th>
+                                <th>Students</th>
+                            </tr>
+                        </thead>
+                        <tbody id="activityTableBody">
+                            <tr>
+                                <td colspan="5">Select a Course and Assignment Status</td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                </div>
+                <!-- tab a end -->
+
+                <div class="tab-pane" id="b">
+                    <div class="gradestab">
+                        <!-- Assignments table (hidden by default) -->
+                        <div id="downloadButtonContainer" style="display: none;">
+                            <div style="float:right;margin-top: 7px; margin-right: 6px; font-size:25px" id="goto-back"
+                                class="fa fa-bars"></div>
+                            <div id="downloadExcelBtn" class="fa fa-download"
+                                style="float:right;margin-top: 7px; margin-right: 13px;font-size:20px"
+                                onclick="downloadExcel()" title="Download Report"></div>
+                            <!-- <button id="fetchgradesBtn" style="float:right; height:22px; margin-top: 7px; margin-right: 9px;margin-left: 9px;font-size:13px" onclick="fetchGrades()">fetch Grades</button> -->
+                            <button id="evaluateBtn" class="fa"
+                                style="float:right;  height:22px; margin-top: 7px; margin-right: 9px; font-size:13px">Evaluate</button>
+                            <div id="loadingIcon" class="fa fa-spinner fa-spin"
+                                style="display: none; float:right; margin-top: 7px; margin-right: 11px; font-size:20px; color: red;">
+                            </div>
+
+                            <div id="refreshBtn" class="fa fa-refresh"
+                                style="float:right;margin-top: 7px; margin-right: 9px; font-size:20px"
+                                class="btn btn-color-primary" title="Refresh"></div>
+                            <div id="refreshTimestampContainer"
+                                style="float:right; margin-top: 11px; margin-right: 9px;">
+                                <span id="refreshTimestamp"
+                                    style="font-family: Arial, sans-serif; font-size: 14px;"></span>
+                            </div>
+                            <!-- <div id="newSubmissionCount"
+                                style="float:right; margin-top: 11px; margin-right: 20px; font-family: Arial, sans-serif; font-size: 14px;">
+                            </div> -->
+                        </div>
+
+                        <table id="gradesTable" style="display: none;">
+                            <thead>
+                                <tr>
+                                    <th>StudentID</th>
+                                    <th>StudentName</th>
+                                    <th>Course</th>
+                                    <th>Assignment</th>
+                                    <th>Timestamp</th>
+                                    <th>Score</th>
+                                    <th>Server</th>
+                                    <th>Notebook</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="gradesTableBody">
+                                <!-- Table content dynamically generated from backend -->
+                            </tbody>
+                        </table>
+                        <!-- Dashboard boxes (hidden initially) -->
+                        <div id="dashboardBoxes">
+                            <div class="dashboardBox">
+                                <div class="dashboardIcon">&#128100;</div>
+                                <div class="dashboardLabel">Active Students: <span class="totalStudents">--</span></div>
+                            </div>
+                            <div class="dashboardBox">
+                                <div class="dashboardIcon">&#127775;</div> Green star icon
+                                <div class="dashboardLabel">Fully Graded: <span id="fullyGraded">--</span></div>
+                            </div>
+                            <div class="dashboardBox">
+                                <div class="dashboardIcon">&#9733;</div> Light brown star icon
+                                <div class="dashboardLabel">Partially Graded: <span id="partiallyGraded">--</span></div>
+                            </div>
+                            <div class="dashboardBox">
+                                <div class="dashboardIcon">&#128308;</div> Red star icon
+                                <div class="dashboardLabel">Not Graded: <span id="totalsubmitted">--</span></div>
+                            </div>
+                            <!-- <div class="dashboardBox">
+                                <div class="dashboardIcon">&#128221;</div>
+                                <div class="dashboardLabel">Active - Submitted = Not Submitted: <span
+                                        id="notSubmitted">--</span></div>
+                            </div> -->
+                        </div>
+
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="responseModal" class="modal">
+        <div class="modal-content">
+            <span class="close-button">&times;</span>
+            <p id="modal-message"></p>
+        </div>
+    </div>
+    <!-- model to show publish, start, stop responses -->
+    <div id="responseModalNew" class="modal">
+        <div class="modal-content">
+            <span class="close-button">&times;</span>
+            <h2 id="modal-header" style="margin-bottom: 20px;">Assignment Responses</h2>
+            <table id="responseTable" style="width: 97%;">
+                <thead>
+                    <tr>
+                        <th style="border: 1px solid #ddd;">Worker Node</th>
+                        <th style="border: 1px solid #ddd;">Response Message / Error</th>
+                    </tr>
+                </thead>
+                <tbody id="modal-body">
+
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <script>
+
+
+        var lastRefreshTimestamp = "01/01/2040 12:00:00"; // Default future timestamp
+        var newTimestamp = "01/01/2040 12:00:00";
+
+        var lastRefreshTimestampTemp = "01/01/2040 12:00:00";
+
+        // Initialize lastRefreshTimestamp on page load
+        document.addEventListener('DOMContentLoaded', function () {
+            // Get current date and time
+            var now = new Date();
+            lastRefreshTimestamp = formatDate(now);
+
+            // Update the timestamp display
+            var refreshTimestampElem = document.getElementById('refreshTimestamp');
+            if (refreshTimestampElem) {
+                refreshTimestampElem.textContent = `Last Refresh: ${lastRefreshTimestamp}`;
+            }
+        });
+
+
+        // Function to handle refresh click
+        function handleRefreshClickold() {
+            lastRefreshTimestampTemp = lastRefreshTimestamp;
+            // Get current date and time for new refresh
+            var now = new Date();
+            newTimestamp = formatDate(now);
+            lastRefreshTimestamp = newTimestamp;
+            // Update the timestamp display
+            var refreshTimestampElem = document.getElementById('refreshTimestamp');
+            if (refreshTimestampElem) {
+                refreshTimestampElem.textContent = `Last Refresh: ${newTimestamp}`;
+            }
+        }
+
+        function formatDate(date) {
+            var day = date.getDate().toString().padStart(2, '0');
+            var month = (date.getMonth() + 1).toString().padStart(2, '0');
+            var year = date.getFullYear();
+            var hours = date.getHours().toString().padStart(2, '0');
+            var minutes = date.getMinutes().toString().padStart(2, '0');
+            var seconds = date.getSeconds().toString().padStart(2, '0');
+            return `${day}/${month}/${year} ${hours}:${minutes}:${seconds}`;
+        }
+
+        function resetTestCentre(course) {
+            const resetIntervel = setInterval(async () => {
+                updatStudentsTabCount(course)
+            }, 2000);
+            function showModal(message, isSuccess) {
+                clearTimeout(resetIntervel)
+                $('#modal-message').text(message);
+                $('#responseModal').show();
+                if (isSuccess) {
+                    $('#modal-message').css('color', 'green');
+                } else {
+                    $('#modal-message').css('color', 'red');
+                }
+            }
+            $.ajax({
+                url: '/deleteusersessions',
+                type: 'GET',
+                contentType: 'application/json',
+                data: { course_name: course },
+                success: function (response) {
+                    showModal(response.message, true);
+                },
+                error: function (response) {
+                    showModal(response.responseJSON.message, false);
+                }
+            });
+        }
+
+        function updateTable(newData, teacher) {
+            console.log("update grades function2 called")
+            var tableBody = $('#gradesTableBody');
+            tableBody.empty(); // Clear existing rows
+            var token = sessionStorage.getItem('token');
+            // Append new rows to the table
+            if (newData.length === 0) {
+                // If newData array is empty, display "No Submissions" message
+                var row = $('<tr><td colspan="8">No Submissions</td></tr>');
+                tableBody.append(row);
+            } else {
+                // Append new rows to the table
+                newData.forEach(function (grade) {
+                    var score = parseInt(grade.score.split('/')[0]); // Extracting score from the score string
+                    var maxScore = parseInt(grade.score.split('/')[1]); // Extracting maximum score
+
+                    var scoreIcon = ""; // Initialize score icon variable
+                    if (score === maxScore) {
+                        scoreIcon = " ⭐"; // Star icon for full score
+                    } else if (score === 0) {
+                        scoreIcon = " 🔴"; // Red circle icon for 0 score
+                    } else {
+                        scoreIcon = " 🟢"; // Other icon for non-maximum score
+                    }
+
+                    var row = $('<tr></tr>');
+                    row.html(`
+                            <td>${grade.student}</td>
+                            <td>${grade.StudentName}</td>
+                            <td>${grade.course}</td>
+                            <td>${grade.assignment}</td>
+                            <td>${grade.timestamp}</td>
+                            <td>${grade.score}${scoreIcon}</td>
+                            <td>${grade.server}</td>
+                            <td>
+                                <a id="notebooklink" data-student = '${grade.student}' data-assignment= '${grade.assignment}' class="disabled-link" href="http://172.168.15.216:8581/sendfeedbackfile?user_token=${token}&student=${grade.student}&assignment_name=${grade.assignment}&course_name=${grade.course}" target="_blank">
+                                    Notebook
+                                </a>
+                            </td>
+                            <td>
+                                <div>
+                                    <div id=${grade.student + "-loadingIcon1"} class="fa fa-spinner fa-spin" style="display: none; color: red;"></div>
+                                    <button id="reevaluateBtn" data-id=${grade.student + "-reevaluateBtn"} class="fa">re-evaluate</button>
+                                </div>
+                            </td>
+                        `);
+                    tableBody.append(row);
+                });
+            }
+            updatePartiallyGradedTabCount();
+            updateFullyGradedTabCount();
+            $("#gradesTable").trigger("update")
+            // var selectedCourse = $('#courseDropdown').val();
+            // var t = 0; // Initialize total students count
+            // // console.log("f2 Updating Dashboard data:")
+            // // Update total students count asynchronously
+            // Promise.all([
+            //     updateTotalSubmitTabCount(),
+            //     updatStudentsTabCount(selectedCourse)  // This function returns a Promise
+            // ]).then(([submitted, total]) => {
+            //     console.log(total, submitted)
+            //     if (submitted != "N/A") {
+            //         const notSubmittedCount = total - submitted;
+            //         if (notSubmittedCount < 0)
+            //             document.getElementById('notSubmitted').textContent = "N/A";
+            //         else
+            //             document.getElementById('notSubmitted').textContent = notSubmittedCount;
+            //     }
+            //     document.getElementById('notSubmitted').textContent = "N/A";
+            // }).catch(error => {
+            //     console.error('Error updating counts:', error);
+            //     document.getElementById('notSubmitted').textContent = "--"; // Handle error case
+            // });
+        }
+
+        $(document).ready(function () {
+            // Function to update selected assignment name
+            function updateSelectedAssignmentName(element) {
+                var selectedAssignment = $(element).closest('tr').find('td:nth-child(2)').text();
+                $('#selectedAssignmentName').text(selectedAssignment);
+                // updatetabcount()
+                var tableBody = $('#gradesTableBody');
+                tableBody.empty();
+                var row = $('<tr><td colspan="8">Loading...</td></tr>');
+                tableBody.append(row);
+            }
+
+            // Update the selected assignment name when a radio button is clicked
+            $(document).on('change', 'input[name="selectActivity"]', function () {
+                updateSelectedAssignmentName(this);
+                selectedCourse = $('#courseDropdown').val();
+                updatStudentsTabCount(selectedCourse);
+                getActiveStudentsCount(selectedCourse);
+                // var selectedCourse = $('#courseDropdown').val();
+                var activityName = $(this).closest('tr').find('td:nth-child(2)').text(); // Activity name is in the second column
+
+                updateTotalSubmitTabCount()
+                filterGrades(selectedCourse, activityName);
+                function filterGrades(selectedCourse, activityName) {
+                    // Make an AJAX request to the server for filtered data
+                    $.ajax({
+                        url: '/gradedsubmissions',
+                        method: 'POST',
+                        data: {
+                            course_name: selectedCourse,
+                            assignment_name: activityName,
+                        },
+                        success: function (response) {
+                            // Update the table with the new data
+                            updateTable(response.data, response.teacher);
+                            // $("#gradesTable").tablesorter({ sortList: [[4, 1]] });
+                            $("#gradesTable").tablesorter();
+                        }
+                    });
+                }
+
+            });
+
+
+            // Update the selected assignment name when a student icon is clicked
+            $(document).on('click', '.studentIcon', function () {
+                updateSelectedAssignmentName(this);
+            });
+        });
+
+
+        $(document).ready(function () {
+
+            $(document).on('click', '#burgerIcon', function () {
+                var selectedAssignmentName = $('#selectedAssignmentName').text().trim();
+
+                // Check if there's a selected assignment name
+                if (selectedAssignmentName) {
+                    // Find the radio button whose corresponding assignment name matches
+                    $('input[name="selectActivity"]').each(function () {
+                        var assignmentName = $(this).closest('tr').find('td:nth-child(2)').text().trim();
+                        if (assignmentName === selectedAssignmentName) {
+                            $(this).prop('checked', true);
+                            return false; // Break the loop once a match is found
+                        }
+                    });
+                }
+            });
+        });
+
+
+        $(document).ready(function () {
+            let selectedRadio = null; // Variable to store the selected radio button
+
+            // Function to handle row clicks and select radio button
+            function handleRowClicks() {
+                $('#activityTableBody').on('click', 'tr', function (event) {
+                    // Check if the click was on the radio button, if so, don't proceed
+                    updateTotalSubmitTabCount()
+                    if ($(event.target).is('input[type="radio"]')) {
+                        return;
+                    }
+
+                    // Find the radio button in the first column of the clicked row
+                    var radioBtn = $(this).find('input[type="radio"]');
+
+                    // Check the radio button
+                    radioBtn.prop('checked', true);
+                    selectedRadio = radioBtn; // Store the selected radio button
+
+                    // Update the selected assignment name
+                    var selectedAssignment = $(this).find('td:nth-child(2)').text(); // Assuming assignment name is in the 2nd column
+                    $('#selectedAssignmentName').text(selectedAssignment);
+                    // updatetabcount()  
+                    var tableBody = $('#gradesTableBody');
+                    tableBody.empty();
+                    var row = $('<tr><td colspan="8">Loading...</td></tr>');
+                    tableBody.append(row);
+                    filterGrades($('#courseDropdown').val(), selectedAssignment)
+                    function filterGrades(selectedCourse, activityName) {
+                        // Make an AJAX request to the server for filtered data
+                        $.ajax({
+                            url: '/gradedsubmissions',
+                            method: 'POST',
+                            data: {
+                                course_name: selectedCourse,
+                                assignment_name: activityName,
+                            },
+                            success: function (response) {
+                                // Update the table with the new data
+                                updateTable(response.data, response.teacher);
+                                // $("#gradesTable").tablesorter({ sortList: [[4, 1]] });
+                                $("#gradesTable").tablesorter();
+                            }
+                        });
+                    }
+                    courseDropdown
+                });
+            }
+
+            // Call the function to handle row clicks
+            handleRowClicks();
+
+            $(document).on('click', '#burgerIcon', function () {
+                // Restore the selected radio button state when coming back to the activity table
+                if (selectedRadio) {
+                    selectedRadio.prop('checked', true);
+                }
+            });
+        });
+
+        $(document).ready(function () {
+            // Function to show or hide dashboard boxes based on grades table visibility
+            function toggleDashboardVisibility() {
+                if ($('#gradesTable').is(':visible')) {
+                    $('#dashboardBoxes').css('display', 'flex'); // Show dashboard boxes
+                } else {
+                    $('#dashboardBoxes').css('display', 'none'); // Hide dashboard boxes
+                }
+            }
+
+            function toggleTabVisibility(showTabs) {
+                if (showTabs) {
+                    $('.tab').show(); // Show the tabs
+                } else {
+                    $('.tab').hide(); // Hide the tabs
+                }
+            }
+            function toggleMainPageElements(showMainPageElements) {
+                if (showMainPageElements) {
+                    $('#courseLabel, #courseDropdown, .tab').show(); // Show the label, dropdown, and tabs
+                } else {
+                    $('#courseLabel, #courseDropdown, .tab').hide(); // Hide the label, dropdown, and tabs
+
+                }
+            }
+            function toggleDownloadButton(showButton) {
+                if (showButton) {
+                    $('#downloadButtonContainer').show();
+                } else {
+                    $('#downloadButtonContainer').hide();
+                }
+            }
+            function toggleButtonContainer(show) {
+                if (show) {
+                    $('#buttonContainer').show();
+                } else {
+                    $('#buttonContainer').hide();
+                }
+            }
+            // Attach click event handler to the student column icon
+            $(document).on('click', '.studentIcon', function () {
+                selectedCourse = $('#courseDropdown').val();
+                var assignmentName = $(this).closest('tr').find('td:eq(1)').text().trim(); // Assuming assignment name is in the 2nd column
+                // Show the grades table
+                $('#gradesTable').css('display', 'block');
+                $('.tab').hide();     //  hide realesed/ready to release
+                $('#b').show();
+                // Show the dashboard boxes
+                // toggleDashboardVisibility();
+                // Hide the Release and Ready to Release tabs
+                // toggleTabVisibility(false);
+                // Hide the main page elements (dropdown and tabs)
+                // toggleMainPageElements(false);
+
+                // Update Total Students count
+                updatStudentsTabCount(selectedCourse);
+                getActiveStudentsCount(selectedCourse);
+                toggleButtonContainer(true);
+                toggleDownloadButton(true);
+            });
+            // srivardhin
+
+
+
+            // Attach click event handler to the burger icon
+            $(document).on('click', '#burgerIcon', function () {
+                // Hide the grades table
+                $('#gradesTable').css('display', 'none');
+                // Hide the dashboard boxes
+                $('#dashboardBoxes').css('display', 'none');
+                // Set the course dropdown value back to the selected course
+                $('#courseDropdown').val(selectedCourse);
+
+                // Show the Release and Ready to Release tabs
+                toggleTabVisibility(true);
+                // Show the main page elements (dropdown and tabs)
+                toggleMainPageElements(true);
+                toggleButtonContainer(false);
+                toggleDownloadButton(false);
+            });
+            // Function to download the table content as an Excel sheet
+            // Function to gather table data and download it as an Excel sheet
+            window.downloadExcel = function () {
+                // Get the course name and assignment name from the first row
+                var courseName = $('#gradesTable tr:eq(1) td:eq(2)').text().trim();
+                var assignmentName = $('#gradesTable tr:eq(1) td:eq(3)').text().trim();
+                // Get the table data excluding the last column
+                var tableData = [];
+                $('#gradesTable tr').each(function (row, tr) {
+                    var rowData = [];
+                    $(tr).find('th, td').each(function (cell, td) {
+                        if ($(td).index() < $(tr).find('th, td').length - 1) {  // Exclude the last column
+                            rowData.push($(td).text());
+                        }
+                    });
+                    tableData.push(rowData);
+                });
+
+                // Create a workbook and add a worksheet
+                var wb = XLSX.utils.book_new();
+                var ws = XLSX.utils.aoa_to_sheet(tableData);
+                XLSX.utils.book_append_sheet(wb, ws, "Grades");
+
+                // Create a Blob from the workbook and trigger the download
+                var wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+                var blob = new Blob([wbout], { type: "application/octet-stream" });
+
+                // Create a link element to trigger the download
+                var link = document.createElement('a');
+                link.href = URL.createObjectURL(blob);
+                link.download = `${courseName}_${assignmentName}.xlsx`;
+                link.click();
+            }
+
+
+            // side menu student button click action  srivardhin
+            $('#students-status').click(function () {
+                // $j('#students-status a').click();
+                $('#activities-info').removeClass('active');
+                $('#activitytable').hide();
+                $('#gradesTable').show();
+                $('.tab').hide();
+                $('#students-status').addClass('active');
+                $('#a').hide();
+                $('#b').show();
+                // $('.goto-back').show();
+                // toggleButtonContainer(true);
+                // toggleDownloadButton(true);
+                $('#downloadButtonContainer').show();
+
+            });
+            $('#activities-info a').click(function () {
+                $('#activities-info').addClass('active');
+                $('#students-status').removeClass('active');
+                // $('.tab').show();
+                $('#activitytable').show();
+                $('#gradesTable').hide();
+                $('#b').hide();
+                $('#a').show();
+            });
+            $('#datasets-page a').click(function () {
+                var token = sessionStorage.getItem('token');
+                var url = $(this).attr('href');
+                document.cookie = `access_token=${token}`
+                $.ajax({
+                    type: 'GET',
+                    url: url,
+                    success: function (data) {
+                        // console.log(data);
+                    }
+                });
+            });
+            $('#clustermonitor-page a').click(function () {
+                var token = sessionStorage.getItem('token');
+                var url = $(this).attr('href');
+                document.cookie = `access_token=${token}`
+                $.ajax({
+                    type: 'GET',
+                    url: url,
+                    success: function (data) {
+                        // console.log(data);
+                    }
+                });
+            });
+            $('#courseperformance-page a').click(function () {
+                var token = sessionStorage.getItem('token');
+                var url = $(this).attr('href');
+                document.cookie = `access_token=${token}`
+                $.ajax({
+                    type: 'GET',
+                    url: url,
+                    success: function (data) {
+                        // console.log(data);
+                    }
+                });
+            });
+            $('#submissionseport-page a').click(function () {
+                var token = sessionStorage.getItem('token');
+                var url = $(this).attr('href');
+                document.cookie = `access_token=${token}`
+                $.ajax({
+                    type: 'GET',
+                    url: url,
+                    success: function (data) {
+                        // console.log(data);
+                    }
+                });
+            });
+        });
+
+        $("#reset-logins").click(function () {
+            var selectedCourse = $('#courseDropdown').val();
+            if (!selectedCourse) {
+                alert('Please select a course before proceeding.');
+                return; // Exit the function early
+            }
+            if (confirm('Do you want to Refresh-All-Loggins ?')) {
+                resetTestCentre(selectedCourse)
+            }
+        });
+
+
+        $(document).ready(function () {
+
+            let selectedAssignmentName = '';
+
+            // Attach click event handler to the student icon
+            $(document).on('click', '.studentIcon', function () {
+                // Get the assignment name from the 2nd column of the clicked row
+                assignmentName = $(this).closest('tr').find('td:eq(1)').text().trim(); // Assuming assignment name is in the 3rd column
+
+                var $row = $(this).closest('tr');
+                // Find the radio button within that <tr> and trigger a click
+                $row.find('input[type="radio"]').click();
+                // Check the radio button
+                $row.find('input[type="radio"]').prop('checked', true);
+                // Your existing logic to show the grades table and dashboard boxes...
+
+                // Optionally, log the assignment name to confirm it's correct
+                // console.log("Selected assignment name: ", assignmentName);
+                updateTotalSubmitTabCount()
+            });
+
+            // Attach click event handler to the refresh button
+            $('#refreshBtn').click(function () {
+
+                // Get the selected course from the dropdown
+                var now = new Date();
+                lastRefreshTimestamp = formatDate(now);
+
+                // Update the timestamp display
+                var refreshTimestampElem = document.getElementById('refreshTimestamp');
+                if (refreshTimestampElem) {
+                    refreshTimestampElem.textContent = `Last Refresh: ${lastRefreshTimestamp}`;
+                }
+                var selectedCourse = $('#courseDropdown').val();
+
+                assignmentName = $('#selectedAssignmentName').text();
+                // console.log("refresh using: ", selectedCourse, " and ", assignmentName);
+
+                // Refresh the grades table data based on the assignment name
+                refreshGradesTable(selectedCourse, assignmentName, lastRefreshTimestamp);
+                // updatetabcount();
+                updatStudentsTabCount(selectedCourse);
+                updateTotalSubmitTabCount()
+            });
+
+            $('#evaluateBtn').click(async function () {
+                var selectedCourse = $('#courseDropdown').val();
+                const fullyGraded = $('#fullyGraded').text()
+                const partiallyGraded = $('#partiallyGraded').text()
+                const submissions = $('#totalsubmitted').text();
+                console.log("evaluateBtn clicked")
+                if (submissions != '--' || partiallyGraded != '--' || fullyGraded != '--') {
+                    const gradded = parseInt(partiallyGraded) + parseInt(fullyGraded)
+                    if (selectedCourse) {
+                        await updateTotalSubmitTabCount();
+                        assignmentName = $('#selectedAssignmentName').text();
+                        $('#evaluateBtn').prop('disabled', true);
+                        $('#loadingIcon').show();
+                        console.log("evaluateGrades start")
+                        evaluateGrades(selectedCourse, assignmentName);
+                    } else {
+                        console.log('No course selected. Skipping evaluateBtn.');
+                    }
+                }
+
+            });
+
+
+            $(document).on('click', '#reevaluateBtn', function (event) {
+                const dataId = event.target.getAttribute("data-id")
+                let student = dataId.split("-")[0]
+                let loaderId = student + "-loadingIcon1"
+                $row = $(this).closest('tr');
+                student = $row.find('td:eq(0)').text().trim()
+                selectedCourse = $row.find('td:eq(2)').text().trim()
+                assignmentName = $row.find('td:eq(3)').text().trim()
+                server = $row.find('td:eq(6)').text().trim()
+                // $('#reevaluateBtn').prop('disabled', true);
+                const button = document.querySelector(`button[data-id='${dataId}']`);
+                // Disable the button if it exists
+                if (button) {
+                    button.style.display = "none";
+                }
+                $(`#${loaderId}`).show();
+                reevaluateStudertGrade(selectedCourse, assignmentName, student, server);
+            });
+
+            // window.evaluateGradeTable = function (selectedCourse, assignmentName) {
+            //     evaluateGrades(selectedCourse, assignmentName);
+            // }
+
+            function evaluateGrades(selectedCourse, assignmentName) {
+                // Make an AJAX request to the server for filtered data
+                console.log("evaluateGrades called")
+                $.ajax({
+                    url: '/autograde_assignment',
+                    method: 'POST',
+                    data: {
+                        course_name: selectedCourse,
+                        assignment_name: assignmentName,
+                        // time_stamp: timestamp
+                    },
+                    success: function (response) {
+                        filterGrades(selectedCourse, assignmentName, "")
+                        $('#loadingIcon').hide();
+                        $('#evaluateBtn').prop('disabled', false); // Enable the button in case of error
+                    },
+                    error: function () {
+                        $('#loadingIcon').hide();
+                        $('#evaluateBtn').prop('disabled', false); // Enable the button in case of error
+                    }
+                });
+                updatStudentsTabCount(selectedCourse);
+            }
+
+            function reevaluateStudertGrade(selectedCourse, assignmentName, student, server) {
+                $.ajax({
+                    url: '/singleevaluation',
+                    method: 'POST',
+                    data: {
+                        course_name: selectedCourse,
+                        assignment_name: assignmentName,
+                        student: student,
+                        server: server
+                    },
+                    success: function (response) {
+                        // updateTable(response.data, response.teacher);
+                        filterGrades(selectedCourse, assignmentName, "")
+                        evaluateModelShow(response)
+                        $(`#${student}-loadingIcon1`).hide();
+                        // $('#reevaluateBtn').prop('disabled', false); // Enable the button in case of error
+                        const dataId = student + "-reevaluateBtn"
+                        const button = document.querySelector(`button[data-id='${dataId}']`);
+
+                        // Disable the button if it exists
+                        if (button) {
+                            button.disabled = false;
+                            button.style.display = "inline";
+                        }
+                    },
+                    error: function (xhr, status, error) {
+                        var errorResponse = JSON.parse(xhr.responseText);
+                        evaluateModelShow(errorResponse)
+                        $(`#${student}-loadingIcon1`).hide();
+                        // $('#reevaluateBtn').prop('disabled', false); // Enable the button in case of error
+                        const dataId = student + "-reevaluateBtn"
+                        const button = document.querySelector(`button[data-id='${dataId}']`);
+
+                        // Disable the button if it exists
+                        if (button) {
+                            button.disabled = false;
+                            button.style.display = "inline";
+                        }
+                    }
+                });
+                updatStudentsTabCount(selectedCourse);
+            }
+
+            function evaluateModelShow(response) {
+                var tableBody = $('#modal-body');
+                tableBody.empty(); // Clear previous content
+                $('#modal-header').text(response.message);
+                $('#responseModalNew').show();
+            }
+
+            // back button in students table
+
+            $('#goto-back').click(function () {
+                // console.log("activties clicked with goto back")
+                // previousContent = $('body').html();
+
+                $('#activities-info a').click();
+
+                $('#activitytable').show();
+            });
+            // Function to refresh the grades table data based on the course and assignment name
+            window.refreshGradesTable = function (selectedCourse, assignmentName, lastRefreshTimestamp) {
+                // console.log("Refresh called with course: ", selectedCourse, " and assignment: ", assignmentName);
+                // console.log("lastRefreshTimestamp while clicking refresh: ", lastRefreshTimestamp);
+                // Filter grades based on selected course and assignment
+
+                filterGrades(selectedCourse, assignmentName, lastRefreshTimestamp);
+
+            }
+
+            // Function to filter grades based on selected assignment and course
+            function filterGrades(selectedCourse, activityName, timestamp) {
+                // Make an AJAX request to the server for filtered data
+                $.ajax({
+                    url: '/gradedsubmissions',
+                    method: 'POST',
+                    data: {
+                        course_name: selectedCourse,
+                        assignment_name: activityName,
+                    },
+                    success: function (response) {
+                        var newSubmissionCountElem = document.getElementById('newSubmissionCount');
+                        if (newSubmissionCountElem) {
+                            newSubmissionCountElem.textContent = `New Submissions: ${response.count}`;
+                            // console.log("New Submissions Count: ", response.count);
+                        }
+                        updateTable(response.data, response.teacher);
+                        // $("#gradesTable").tablesorter({ sortList: [[4, 1]] });
+                        $("#gradesTable").tablesorter();
+                    }
+                });
+            }
+
+            // Function to update the table with new data
+            // function updateTable(newData, teacher) {
+            //     // console.log("update grades function2 called")
+            //     var tableBody = $('#gradesTableBody');
+            //     tableBody.empty(); // Clear existing rows
+            //     var token = sessionStorage.getItem('token');
+            //     // Append new rows to the table
+            //     if (newData.length === 0) {
+            //         // If newData array is empty, display "No Submissions" message
+            //         var row = $('<tr><td colspan="5">No Submissions</td></tr>');
+            //         tableBody.append(row);
+            //     } else {
+            //         // Append new rows to the table
+            //         newData.forEach(function (grade) {
+            //             var score = parseInt(grade.score.split('/')[0]); // Extracting score from the score string
+            //             var maxScore = parseInt(grade.score.split('/')[1]); // Extracting maximum score
+
+            //             var scoreIcon = ""; // Initialize score icon variable
+            //             if (score === maxScore) {
+            //                 scoreIcon = " ⭐"; // Star icon for full score
+            //             } else if (score === 0) {
+            //                 scoreIcon = " 🔴"; // Red circle icon for 0 score
+            //             } else {
+            //                 scoreIcon = " 🟢"; // Other icon for non-maximum score
+            //             }
+
+            //             var row = $('<tr></tr>');
+            //             row.html(`
+            //         <td>${grade.student}</td>
+            //         <td>${grade.StudentName}</td>
+            //         <td>${grade.course}</td>
+            //         <td>${grade.assignment}</td>
+            //         <td>${grade.timestamp}</td>
+            //         <td>${grade.score}${scoreIcon}</td>
+            //         <td>${grade.server}</td>
+            //         <td>
+            //             <a id="notebooklink" data-student = '${grade.student}' data-assignment= '${grade.assignment}' class="disabled-link" href="http://10.11.51.225:8581/sendfeedbackfile?user_token=${token}&student=${grade.student}&assignment_name=${grade.assignment}&course_name=${grade.course}" target="_blank">
+            //                 Notebook
+            //             </a>
+            //         </td>
+            //     `);
+            //             tableBody.append(row);
+            //         });
+            //     }
+
+            //     var selectedCourse = $('#courseDropdown').val();
+            //     var t = 0; // Initialize total students count
+            //     // console.log("f2 Updating Dashboard data:")
+            //     // Update total students count asynchronously
+            //     Promise.all([
+            //         updateTotalSubmitTabCount(),
+            //         updatStudentsTabCount(selectedCourse)  // This function returns a Promise
+            //     ]).then(([submitted, total]) => {
+            //         console.log(total, submitted)
+            //         if (submitted != "N/A") {
+            //             const notSubmittedCount = total - submitted;
+            //             if (notSubmittedCount < 0)
+            //                 document.getElementById('notSubmitted').textContent = "N/A";
+            //             else
+            //                 document.getElementById('notSubmitted').textContent = notSubmittedCount;
+            //         }
+            //         document.getElementById('notSubmitted').textContent = "N/A";
+            //     }).catch(error => {
+            //         console.error('Error updating counts:', error);
+            //         document.getElementById('notSubmitted').textContent = "--"; // Handle error case
+            //     });
+            // }
+
+        });
+
+        $(window).on("unload", function () {
+            sessionStorage.clear()
+        });
+
+        $('.close-button').on('click', function () {
+            $('#responseModal').hide();
+        });
+
+
+        $(document).ready(function () {
+            var user = '{{ user }}'; // retrieve token from Flask index template variable
+            var token = '{{ token }}'
+            // console.log('user:', user);
+
+            // store token in local storage
+            sessionStorage.setItem('user', user);
+            sessionStorage.setItem('token', token);
+            // Variable to store the previous HTML content
+            var previousContent = null;
+
+            // Function to create the burger icon and attach click event handler
+            function createBurgerIcon() {
+                // Remove any existing burger icons
+                $('#burgerIcon').remove();
+
+                // Add a burger icon for the back option
+                var burgerIcon = $('<span id="burgerIcon" class="burger">&#9776;</span>');
+                burgerIcon.on('click', function () {
+                    // Restore the previous HTML content
+                    if (previousContent) {
+                        $('body').html(previousContent);
+                        // Create and attach burger icon again after restoring content
+                        createBurgerIcon();
+                    }
+                });
+                // $('#goto-back').append(burgerIcon);
+            }
+
+            // Attach click event handler to the student icon
+            $(document).on('click', '.studentIcon', function () {
+                // Store the previous HTML content
+                previousContent = $('#a').html();
+
+                // Remove all existing tables from the DOM
+                $('table').remove();
+                $('.tab').hide();
+                // Create a new table element with the specified columns
+                var newTable = $('<table id="gradesTable"></table>');
+                var thead = $('<thead><tr><th>StudentID</th><th>StudentName</th><th>Course</th><th>Assignment</th><th>Timestamp</th><th>Score</th><th>server</th><th>Notebook</th><th>reevaluate</th></tr></thead>');
+                var tbody = $('<tbody id="gradesTableBody"></tbody>');
+
+                $('#students-status').addClass('active');
+                $('#activities-info').removeClass('active');
+                // Append the new table to the body
+                newTable.append(thead);
+                newTable.append(tbody);
+                $('.gradestab').append(newTable);
+
+                // Get the selected course and assignment name from the activity table
+                var selectedCourse = $('#courseDropdown').val();
+                var activityName = $(this).closest('tr').find('td:nth-child(2)').text(); // Activity name is in the second column
+
+                // Filter grades based on selected assignment and course
+                filterGrades(selectedCourse, activityName);
+
+                // Create and attach burger icon
+                createBurgerIcon();
+            });
+
+            $('#goto-back').click(function () {
+                // console.log("activties clicked with goto back")
+                // previousContent = $('body').html();
+
+
+                if (previousContent) {
+                    $('#a').html(previousContent);
+                    //           
+
+                }
+                // $('.tab').show();
+                $('#activitytable').show();
+            });
+            $('#activities-info a').click(function () {
+                $('#activitytable').show();
+
+                if (previousContent) {
+                    $('#a').html(previousContent);
+                    //           
+
+                }
+                // $('.tab').show();
+            });
+            // Function to filter grades based on selected assignment and course
+            function filterGrades(selectedCourse, activityName) {
+                // Make an AJAX request to the server for filtered data
+                $.ajax({
+                    url: '/gradedsubmissions',
+                    method: 'POST',
+                    data: {
+                        course_name: selectedCourse,
+                        assignment_name: activityName,
+                    },
+                    success: function (response) {
+                        // Update the table with the new data
+                        updateTable(response.data, response.teacher);
+                        $("#gradesTable").tablesorter();
+                    }
+                });
+            }
+
+            // Function to update the table with new data
+            // function updateTable(newData, teacher) {
+            //     // console.log("update grades function3 called")
+            //     var tableBody = $('#gradesTableBody');
+            //     tableBody.empty(); // Clear existing rows
+            //     var token = sessionStorage.getItem('token');
+            //     // Append new rows to the table
+            //     if (newData.length === 0) {
+            //         // If newData array is empty, display "No Submissions" message
+            //         var row = $('<tr><td colspan="5">No Submissions</td></tr>');
+            //         tableBody.append(row);
+            //     } else {
+            //         // Append new rows to the table
+            //         newData.forEach(function (grade) {
+            //             var score = parseInt(grade.score.split('/')[0]); // Extracting score from the score string
+            //             var maxScore = parseInt(grade.score.split('/')[1]); // Extracting maximum score
+
+            //             var scoreIcon = ""; // Initialize score icon variable
+            //             if (score === maxScore) {
+            //                 scoreIcon = " ⭐"; // Star icon for full score
+            //             } else if (score === 0) {
+            //                 scoreIcon = " 🔴"; // Red circle icon for 0 score
+            //             } else {
+            //                 scoreIcon = " 🟢"; // Other icon for non-maximum score
+            //             }
+            //             var row = $('<tr></tr>');
+            //             row.html(`
+            //         <td>${grade.student}</td>
+            //         <td>${grade.StudentName}</td>
+            //         <td>${grade.course}</td>
+            //         <td>${grade.assignment}</td>
+            //         <td>${grade.timestamp}</td>
+            //         <td>${grade.score}${scoreIcon}</td>
+            //         <td>${grade.server}</td>
+            //         <td>
+            //             <a id="notebooklink" data-student = '${grade.student}' data-assignment= '${grade.assignment}' class="disabled-link" href="http://10.11.51.225:8581/sendfeedbackfile?user_token=${token}&student=${grade.student}&assignment_name=${grade.assignment}&course_name=${grade.course}" target="_blank">
+            //                 Notebook
+            //             </a>
+            //         </td>
+            //     `);
+            //             tableBody.append(row);
+            //         });
+            //     }
+
+            //     var selectedCourse = $('#courseDropdown').val();
+            //     var t = 0; // Initialize total students count
+            //     // console.log("f3 Updating Dashboard data:")
+            //     // Update total students count asynchronously
+            //     Promise.all([
+            //         updateTotalSubmitTabCount(),
+            //         updatStudentsTabCount(selectedCourse)  // This function returns a Promise
+            //     ]).then(([submitted, total]) => {
+            //         console.log(total, submitted)
+            //         if (submitted != "N/A") {
+            //             const notSubmittedCount = total - submitted;
+            //             if (notSubmittedCount < 0)
+            //                 document.getElementById('notSubmitted').textContent = "N/A";
+            //             else
+            //                 document.getElementById('notSubmitted').textContent = notSubmittedCount;
+            //         }
+            //         document.getElementById('notSubmitted').textContent = "N/A";
+            //     }).catch(error => {
+            //         console.error('Error updating counts:', error);
+            //         document.getElementById('notSubmitted').textContent = "--"; // Handle error case
+            //     });
+
+            // }
+
+        });
+
+
+        function populateCourses() {
+            var user = '{{ user }}'
+            console.log(user)
+            $.ajax({
+                url: '/get_courses',
+                type: 'GET',
+                data: { user: user }, // send token as a query parameter
+                success: function (response) {
+                    var courses = response.courses;
+                    $('#courseDropdown').empty();
+                    $('#courseDropdown').append($('<option>', {
+                        value: '',
+                        text: 'Select Course'
+                    }));
+                    $.each(courses, function (index, course) {
+                        $('#courseDropdown').append($('<option>', {
+                            value: course,
+                            text: course
+                        }));
+                    });
+                }
+            });
+        }
+
+        $('.close-button').on('click', function () {
+            $('#responseModalNew').hide();
+        });
+
+        function actionsModelShow(response) {
+            const course = $('#courseDropdown').val();
+            // updateActivityTableall(selectedCourse)
+            var tableBody = $('#modal-body');
+            tableBody.empty(); // Clear previous content
+            $('#modal-header').text(response.message);
+            response.responses.forEach(function (item) {
+                var workerNodeIP = item.url.split('/')[2];
+                var lastTwoDigits = workerNodeIP.split('.').pop();
+                var workerNodeName = `WorkerNode${lastTwoDigits.substring(1).split(':')[0]}`;
+
+                tableBody.append(`
+                    <tr>
+                        <td><h3>${workerNodeName}</h3></td>
+                        <td style="font-size: 15px;">${item.message}</td>
+                    </tr>
+                `);
+            });
+
+            // Show the modal
+            $('#responseModalNew').show();
+        }
+
+        $(document).ready(function () {
+
+            function animateButton(button, start = false) {
+                if (start == true) {
+                    button.addClass('loading');
+                } else {
+                    button.removeClass('loading');
+                }
+            }
+
+            $(document).on('click', '.startBtn', function () {
+                var button = $(this);
+
+                // Animate the button
+                animateButton(button, true);
+                // Get the selected course and activity name from the current row
+                var selectedCourse = $('#courseDropdown').val();
+                var activityName = $(this).closest('tr').find('td:nth-child(2)').text(); // Assuming activity name is in the second column
+                $.ajax({
+                    url: '/start_assignment',
+                    type: 'POST',
+                    data: { course_name: selectedCourse, assignment_name: activityName },
+                    success: function (response) {
+                        actionsModelShow(response)
+                    },
+                    error: function (xhr, status, error) {
+                        // Handle error response if needed
+                        var errorResponse = JSON.parse(xhr.responseText);
+                        console.log(errorResponse)
+                        actionsModelShow(errorResponse)
+                        console.log('Error:', error);
+                    },
+                    complete: function () {
+                        animateButton(button, false);
+                    }
+                });
+                // updateAssignmentStatus(activityName, selectedCourse, $(this).closest('tr').find('.statusLoader'));
+            });
+
+            // Attach click event handler to "Stop" buttons
+            $(document).on('click', '.stopBtn', function () {
+                var button = $(this);
+
+                // Animate the button
+                animateButton(button, true);
+                // Get the selected course and activity name from the current row
+                var selectedCourse = $('#courseDropdown').val();
+                var activityName = $(this).closest('tr').find('td:nth-child(2)').text(); // Assuming activity name is in the second column
+
+                // Make an AJAX call to backend endpoint
+                $.ajax({
+                    url: '/unreleaseassignment',
+                    type: 'POST',
+                    data: { course_name: selectedCourse, assignment_name: activityName },
+                    success: function (response) {
+                        actionsModelShow(response)
+                    },
+                    error: function (xhr, status, error) {
+                        // Handle error response if needed
+                        var errorResponse = JSON.parse(xhr.responseText);
+                        actionsModelShow(errorResponse)
+                        console.log('Error:', error);
+                    },
+                    complete: function () {
+                        animateButton(button, false);
+                    }
+                });
+                // updateAssignmentStatus(activityName, selectedCourse, $(this).closest('tr').find('.statusLoader'));
+            });
+
+            // Attach click event handler to "publish" buttons
+            $(document).on('click', '.publishBtn', function () {
+                var button = $(this);
+
+                // Animate the button
+                animateButton(button, true);
+                // Get the selected course and activity name from the current row
+                var selectedCourse = $('#courseDropdown').val();
+                var activityName = $(this).closest('tr').find('td:nth-child(2)').text();
+
+                // Make an AJAX call to backend endpoint
+                $.ajax({
+                    url: '/publish',
+                    type: 'POST',
+                    data: { course_name: selectedCourse, assignment_name: activityName },
+                    success: function (response) {
+                        actionsModelShow(response)
+                    },
+                    error: function (xhr, status, error) {
+                        var errorResponse = JSON.parse(xhr.responseText);
+                        actionsModelShow(errorResponse)
+                    },
+                    complete: function () {
+                        animateButton(button, false);
+                    }
+                });
+            });
+
+
+        });
+
+
+        function getSelectedCourseId() {
+            var dropdown = document.getElementById("courseDropdown");
+            var selectedCourseId = dropdown.value;
+            return selectedCourseId;
+        }
+
+        let isTabClicked = false;
+        // Function to handle tab click
+        function handleTabClick(tabId) {
+
+            // console.log("inside handleTabClick: ", tabId);
+
+            // Remove active class from all tabs
+            var tabs = document.querySelectorAll('.tablinks');
+            tabs.forEach(function (tab) {
+                tab.classList.remove('active');
+            });
+
+            // Add active class to the clicked tab
+            var clickedTab = document.getElementById(tabId);
+            clickedTab.classList.add('active');
+
+            // Update activity table immediately based on the clicked tab
+            if (tabId === 'releasedTab') {
+                document.getElementById('unreleasedTab').classList.remove('active');
+                updateActivityTableall(getSelectedCourseId());
+            } else if (tabId === 'unreleasedTab') {
+                document.getElementById('releasedTab').classList.remove('active');
+                updateActivityTable(getSelectedCourseId());
+            }
+
+            // Set the state variable to true
+            isTabClicked = true;
+
+            // Refresh the activity table without delay
+        }
+
+        $(document).ready(function () {
+            // Simulate a click on the "Ready to Release" tab to make it the default selected tab
+            $('#unreleasedTab').click();
+        });
+
+
+
+
+        // Function to update activity table
+        function updateActivityTable(selectedCourse) {
+            // console.log(selectedCourse);
+
+            $.ajax({
+                url: '/get_unique_folders',
+                type: 'GET',
+                data: { course_name: selectedCourse },
+                success: function (response) {
+                    var uniqueFolders = response.unique_folders;
+
+                    $('#activityTableBody').empty();
+                    if (selectedCourse === '' || uniqueFolders == undefined || uniqueFolders.length === 0) {
+                        $('#activityTableBody').append('<tr><td colspan="5">No activities found</td></tr>');
+                    } else {
+                        // Loop through unique folders (assignments)
+                        $.each(uniqueFolders, function (index, assignment) {
+                            // console.log('Assignment:', assignment);
+
+                            // Check if status is stored in local storage, if not, set it to 'Not Started' || 'Data Not Found'
+                            var status = sessionStorage.getItem(assignment) || '--';
+
+                            var row = $('<tr>');
+                            row.append($('<td>').html('<input type="radio" name="selectActivity">')); // Select column
+                            row.append($('<td>').text(assignment)); // Activity Names column - Display unique assignment
+                            row.append($('<td>').text(status)); // Status column - Use stored status
+                            row.append($('<td>').html('<button class="publishBtn">Publish</button><button class="startBtn">Start</button><button class="stopBtn">Stop</button>')); // Action column
+                            row.append($('<td>').html('<span class="fa fa-users fa-2x studentIcon"></span>')); // Students column
+                            $('#activityTableBody').append(row);
+                        });
+                    }
+
+                },
+                error: function (xhr, status, error) {
+                    console.log('Error:', error);
+                    // Handle error here, e.g., display an error message to the user
+                }
+            });
+        }
+
+        // Function to update activity table
+        // function updateActivityTableall(selectedCourse) {
+        //     // console.log(selectedCourse);
+
+        //     $('#activityTableBody').empty();
+        //     $.ajax({
+        //         url: '/courseassignments',
+        //         type: 'GET',
+        //         data: { course_name: selectedCourse },
+        //         success: function (response) {
+        //             var allFolders = response.all_folders;
+        //             // console.log('All Folders:', allFolders);
+
+        //             $('#activityTableBody').empty();
+        //             if (selectedCourse === '' || allFolders.length === 0) {
+        //                 $('#activityTableBody').append('<tr><td colspan="5">No activities found</td></tr>');
+        //             } else {
+        //                 // Loop through all folders (assignments)
+        //                 $.each(allFolders, function (index, assignment) {
+        //                     var status = sessionStorage.getItem(assignment) || '--';
+        //                     var row = $('<tr>');
+        //                     row.append($('<td>').html('<input type="radio" name="selectActivity">')); // Select column
+        //                     row.append($('<td>').text(assignment)); // Activity Names column - Display assignment
+        //                     row.append($('<td>').text(status)); // Status column - Use stored status
+        //                     row.append($('<td>').html('<button class="publishBtn">Publish</button><button class="startBtn">Start</button><button class="stopBtn">Stop</button>')); // Action column
+        //                     row.append($('<td>').html('<span class="fa fa-users fa-2x studentIcon"></span>')); // Students column
+        //                     $('#activityTableBody').append(row);
+        //                 });
+        //             }
+
+        //         },
+        //         error: function (xhr, status, error) {
+        //             console.log('Error:', error);
+        //             // Handle error here, e.g., display an error message to the user
+        //         }
+        //     });
+        // }
+        function updateActivityTableall(selectedCourse) {
+            $('#activityTableBody').empty();
+            $.ajax({
+                url: '/courseassignments',
+                type: 'GET',
+                data: { course_name: selectedCourse },
+                success: function (response) {
+                    var allFolders = response.all_folders;
+
+                    $('#activityTableBody').empty();
+                    if (selectedCourse === '' || allFolders.length === 0) {
+                        $('#activityTableBody').append('<tr><td colspan="5">No activities found</td></tr>');
+                    } else {
+                        $.each(allFolders, function (index, assignment) {
+                            var row = $('<tr>');
+                            row.append($('<td>').html('<input type="radio" name="selectActivity">')); // Select column
+                            row.append($('<td>').text(assignment)); // Activity Names column
+                            row.append($('<td>').html(`<span class="statusLoader">--</span>`)); // Status column
+                            row.append($('<td>').html(`
+                                <button class="publishBtn">Publish</button>
+                                <button class="startBtn">Start</button>
+                                <button class="stopBtn">Stop</button>
+                            `)); // Action column
+                            row.append($('<td>').html('<span class="fa fa-users fa-2x studentIcon"></span>')); // Students column
+                            $('#activityTableBody').append(row);
+                            // updateAssignmentStatus(assignment, selectedCourse, row.find('.statusLoader'));
+                        });
+                    }
+                },
+                error: function (xhr, status, error) {
+                    console.log('Error:', error);
+                }
+            });
+        }
+
+        function updateAssignmentStatus(assignment_name, course_name, targetElement) {
+            console.log(course_name, assignment_name, targetElement)
+            $(targetElement).html('<span class="statusLoader">Loading...</span>');
+            $(targetElement).css("color", "black")
+            $.ajax({
+                url: '/getassignmentstatus',
+                type: 'GET',
+                data: { assignment_name: assignment_name, course_name: course_name },
+                success: function (statusResponse) {
+                    var status = statusResponse.status || '--'; // Default to '--' if no status
+                    switch (status.toLowerCase()) {
+                        case 'started':
+                            $(targetElement).html(`Started`);
+                            $(targetElement).css("color", "green")
+                            break;
+                        case 'stopped':
+                            $(targetElement).html(`Stopped`);
+                            $(targetElement).css("color", "red")
+                            break;
+                        case 'partially started':
+                            $(targetElement).html(`Partially Started`);
+                            $(targetElement).css("color", "blue")
+                            break;
+                        case 'error':
+                            $(targetElement).html(`Error`);
+                            $(targetElement).css("color", "red")
+                            break;
+                        default:
+                            $(targetElement).html(status);
+                            $(targetElement).css("color", "black")
+                    }
+                    $(targetElement).text(status); // Update the status in the table
+                },
+                error: function () {
+                    $(targetElement).text('Error fetching status');
+                }
+            });
+        }
+
+        // // Function to handle start button click
+        // $(document).on('click', '.startBtn', function () {
+        //     var clickedRow = $(this).closest('tr');
+        //     var startTime = new Date(); // Get the current time
+        //     var formattedTime = formatDatetime(startTime); // Format the time
+
+        //     // Update the status column with the start time
+        //     var assignment = clickedRow.find('td:nth-child(2)').text(); // Get assignment name
+        //     clickedRow.find('td:nth-child(3)').text('Started on ' + formattedTime);
+
+        //     // Store the status in local storage
+        //     sessionStorage.setItem(assignment, 'Started on ' + formattedTime);
+        // });
+
+        // // Function to handle stop button click
+        // $(document).on('click', '.stopBtn', function () {
+        //     var clickedRow = $(this).closest('tr');
+        //     var stopTime = new Date(); // Get the current time
+        //     var formattedTime = formatDatetime(stopTime); // Format the time
+
+        //     // Update the status column with the stop time
+        //     var assignment = clickedRow.find('td:nth-child(2)').text(); // Get assignment name
+        //     clickedRow.find('td:nth-child(3)').text('Stopped on ' + formattedTime);
+
+        //     // Store the status in local storage
+        //     sessionStorage.setItem(assignment, 'Stopped on ' + formattedTime);
+        // });
+
+        // // Function to format datetime
+        // function formatDatetime(datetime) {
+        //     var options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: 'numeric', minute: 'numeric', hour12: true };
+        //     return datetime.toLocaleString('en-US', options);
+        // }
+
+        // Load stored statuses when the page is loaded
+        $(document).ready(function () {
+            // Loop through each row and update the status column from local storage
+            $('#activityTableBody tr').each(function () {
+                var assignment = $(this).find('td:nth-child(2)').text(); // Get assignment name
+                var status = sessionStorage.getItem(assignment); // Get stored status
+                if (status) {
+                    $(this).find('td:nth-child(3)').text(status); // Update status column
+                }
+            });
+        });
+
+        function refreshActivityTable(delay = 3000) {
+            setTimeout(function () {
+                if (!isTabClicked) {
+                    return;
+                }
+                var selectedCourse = $('#courseDropdown').val();
+                var selectedTabId = $('.tab button.active').attr('id');
+                if (selectedTabId === 'releasedTab') {
+                    updateActivityTableall(selectedCourse);
+                } else if (selectedTabId === 'unreleasedTab') {
+                    updateActivityTable(selectedCourse);
+                }
+            }, delay);
+        }
+
+        // Populate courses dropdown initially
+        populateCourses();
+
+        // Update activity table when course dropdown changes
+        $('#courseDropdown').change(function () {
+            var selectedCourse = $(this).val();
+            refreshActivityTable(0);
+            updatStudentsTabCount(selectedCourse)
+            $('#gradesTableBody tr').detach();
+            $('#selectedAssignmentName').empty();
+            updateFullyGradedTabCount();
+            updatePartiallyGradedTabCount();
+            updateTotalSubmitTabCount();
+        });
+
+
+        function getActiveStudentsCount(courseName) {
+            return new Promise((resolve, reject) => {
+                $.ajax({
+                    url: '/activestudentscount',
+                    method: 'GET',
+                    data: {
+                        course_name: courseName
+                    },
+                    success: function (response) {
+                        resolve(response.total);
+                    },
+                    error: function (xhr, status, error) {
+                        reject("-");
+                    }
+                });
+            });
+        }
+
+        // Function to update the total students count in the dashboard box
+        async function updatStudentsTabCount(courseName) {
+            try {
+                const activeCount = await getActiveStudentsCount(courseName);
+
+                const response = await $.ajax({
+                    url: '/totalstudentscount',
+                    method: 'GET',
+                    data: { course_name: courseName }
+                });
+
+                const totalCount = parseInt(response.total);
+                $('.totalStudents').text(activeCount + " of " + totalCount); // Add a space between counts
+                return activeCount;
+
+            } catch (error) {
+                console.log('Error fetching total students count:', error);
+                $('.totalStudents').text("--");
+                throw error; // Re-throw the error if needed
+            }
+        }
+
+        // function startAutoUpdateCount(interval = 15000) { // Default interval set to 15000ms (15 seconds)
+        //     setInterval(async () => {
+        //         var selectedCourse = $('#courseDropdown').val();
+        //         if (selectedCourse) {
+        //             await updateTotalSubmitTabCount();
+        //             await updatStudentsTabCount(selectedCourse).catch(error => {
+        //                 console.error('Error updating student counts:', error);
+        //             });
+        //         } else {
+        //             console.log('No course selected. Skipping student count update. in startAutoUpdateCount())');
+        //         }
+        //     }, interval);
+        // }
+        // startAutoUpdateCount();
+
+        // Function to update the Fully Graded count in the dashboard box
+        function updateFullyGradedTabCount() {
+            console.log("updateFullyGradedTabCount called");
+            var fullyGradedCount = 0;
+            var maxScore = 0;
+
+            // Select all cells in the "Score" column using the nth-child selector
+            var scoreCells = document.querySelectorAll('table#gradesTable tbody tr td:nth-child(6)'); // Assuming "Score" is the 5th column in the grades table
+
+            // Loop through each cell in the "Score" column
+            scoreCells.forEach(function (cell) {
+                // Extract the score text from the cell
+                var scoreText = cell.textContent.trim();
+                var fullscorestring = scoreText.split(' ')[0]; // ex: 75/100
+                var studentscore = parseInt(fullscorestring.split('/')[0]); // Extracting the score after the icon
+                var totalscore = parseInt(fullscorestring.split('/')[1]);
+                // Update maxScore if the current score is greater
+                // maxScore = Math.max(maxScore, score);
+                // Check if score is a valid number
+                if (!isNaN(totalscore)) {
+                    var scoreA = studentscore;
+                    var scoreB = totalscore; // Use dynamically determined maxScore
+
+                    // Check if A is equal to B (i.e., fully graded)
+                    if (scoreA === scoreB) {
+                        fullyGradedCount++;
+                    }
+                }
+            });
+
+            // Update the Fully Graded count in the dashboard box
+            document.getElementById('fullyGraded').textContent = fullyGradedCount;
+            return fullyGradedCount;
+        }
+
+
+        function updatePartiallyGradedTabCount() {
+            // console.log("updatePartiallyGradedTabCount called");
+            var partiallyGradedCount = 0;
+            var maxScore = 0;
+
+            // Select all cells in the "Score" column using the nth-child selector
+            var scoreCells = document.querySelectorAll('table#gradesTable tbody tr td:nth-child(6)'); // Assuming "Score" is the 5th column
+
+            // Loop through each cell in the "Score" column
+            scoreCells.forEach(function (cell) {
+                // Extract the score text from the cell
+                var scoreText = cell.textContent.trim();
+                var parts = scoreText.split(' ');
+                var scoreParts = parts[0].split('/');
+                var score = parseInt(scoreParts[0]);
+                var maxScore = parseInt(scoreParts[1]);
+
+                // Check if score is a valid number
+                if (!isNaN(score)) {
+                    var scoreA = score;
+                    var scoreB = maxScore; // Use dynamically determined maxScore
+
+                    // Log values for debugging
+                    // console.log("Score A:", scoreA);
+                    // console.log("Score B:", scoreB);
+
+                    // Check if A is less than B and A is not equal to 0 (i.e., partially graded)
+                    if (scoreA < scoreB) {
+                        partiallyGradedCount++;
+                    }
+                }
+            });
+
+            // Log partially graded count for debugging
+            // console.log("Partially Graded Count:", partiallyGradedCount);
+
+            // Update the partially Graded count in the dashboard box
+            document.getElementById('partiallyGraded').textContent = partiallyGradedCount;
+            return partiallyGradedCount;
+        }
+
+        function updateTotalSubmitTabCount() {
+            return new Promise((resolve, reject) => {
+                var selectedCourse = $('#courseDropdown').val();
+                var assignmentName = $('#selectedAssignmentName').text();
+
+                if (!selectedCourse || !assignmentName) {
+                    document.getElementById('totalsubmitted').textContent = '--';
+                    console.log('Course or assignment name is empty. Aborting API call. updateTotalSubmitTabCount()');
+                    reject('Course or assignment is empty');
+                    return;
+                }
+
+                $.ajax({
+                    url: '/totalsubmittedcount',
+                    type: 'GET',
+                    data: {
+                        course_name: selectedCourse,
+                        assignment_name: assignmentName
+                    },
+                    success: function (response) {
+                        let totalcount = response.total;
+                        document.getElementById('totalsubmitted').textContent = totalcount;
+                        resolve(totalcount);
+
+                        // if (totalcount < 1) {
+                        //     Promise.all([
+                        //         updatePartiallyGradedTabCount(),
+                        //         updateFullyGradedTabCount(),
+                        //     ]).then(([partial, fully]) => {
+                        //         const SubmittedCount = partial - fully;
+                        //         // Update totalcount only if SubmittedCount is non-negative
+                        //         totalcount = SubmittedCount < 0 ? "N/A" : SubmittedCount;
+                        //         document.getElementById('totalsubmitted').textContent = totalcount;
+                        //         resolve(totalcount); // Resolve with the final totalcount
+                        //     }).catch(error => {
+                        //         console.error('Error updating counts:', error);
+                        //         document.getElementById('totalsubmitted').textContent = "--"; // Handle error case
+                        //         reject(error);
+                        //     });
+                        // } else {
+                        //     document.getElementById('totalsubmitted').textContent = totalcount;
+                        //     resolve(totalcount); // Resolve the Promise with totalcount
+                        // }
+                    },
+                    error: function (error) {
+                        document.getElementById('totalsubmitted').textContent = '--';
+                        console.log('Error fetching new submission count:', error);
+                        reject(error); // Reject the Promise on error
+                    }
+                });
+            });
+        }
+
+        // function updatetabcount() {
+        //     var selectedCourse = $('#courseDropdown').val();
+        //     Promise.all([
+        //         updatePartiallyGradedTabCount(),
+        //         updateFullyGradedTabCount(),
+        //         updateTotalSubmitTabCount(),
+        //         updatStudentsTabCount(selectedCourse)
+        //     ]);
+        // }
+
+
+    </script>
+</body>
+
+</html>
+
+
+
+
+
+<!-- testcentercsssrivardhin -->
+<style>
+    #region-main {
+        margin-top: 15px !important;
+    }
+
+    .refresh-icons-half2 {
+        padding-top: 0px !important;
+    }
+
+    /* custom inclusion of right, left and below tabs */
+
+    .tabs-below>.nav-tabs,
+    .tabs-right>.nav-tabs,
+    .tabs-left>.nav-tabs {
+        /* border-bottom: 0; */
+        margin-left: 8px;
+    }
+
+    .tab-content>.tab-pane,
+    .pill-content>.pill-pane {
+        display: none;
+    }
+
+    .tab-content>.active,
+    .pill-content>.active {
+        display: block;
+        margin-left: 1px
+    }
+
+    .tabs-below>.nav-tabs {
+        border-top: 1px solid #ddd;
+    }
+
+    .tabs-below>.nav-tabs>li {
+        margin-top: -1px;
+        margin-bottom: 0;
+    }
+
+    .tabs-below>.nav-tabs>li>a {
+        -webkit-border-radius: 0 0 4px 4px;
+        -moz-border-radius: 0 0 4px 4px;
+        border-radius: 0 0 4px 4px;
+    }
+
+    .tabs-left>.nav-tabs>li,
+    .tabs-right>.nav-tabs>li {
+        float: none;
+    }
+
+    .tabs-left>.nav-tabs>li>a,
+    .tabs-right>.nav-tabs>li>a {
+        min-width: 74px;
+        margin-right: 0;
+        margin-bottom: 3px;
+    }
+
+    .tabs-left>.nav-tabs {
+        float: left;
+        margin-right: 19px;
+        border-right: 1px solid #ddd;
+        font-size: 14px;
+    }
+
+    .tabs-left>.nav-tabs>li>a {
+        margin-right: -1px;
+        -webkit-border-radius: 4px 0 0 4px;
+        -moz-border-radius: 4px 0 0 4px;
+        border-radius: 4px 0 0 4px;
+    }
+
+    .tabs-right>.nav-tabs {
+        float: right;
+        margin-left: 19px;
+        border: 1px solid #ddd;
+    }
+
+    .tabs-right>.nav-tabs>li>a {
+        margin-left: -1px;
+        -webkit-border-radius: 0 4px 4px 0;
+        -moz-border-radius: 0 4px 4px 0;
+        border-radius: 0 4px 4px 0;
+    }
+
+    .status-row {
+        margin-bottom: 15px
+    }
+
+    .tright {
+        width: 100%;
+
+    }
+
+    .tabbable,
+    .tabs-left {
+
+        padding: 0px !important;
+        box-shadow: 0 1px 3px rgba(253, 250, 243, 0.45) !important;
+        margin-top: 5px;
+        padding-left: 0px;
+        margin-left: 0;
+    }
+
+    .fa-angle-double-right {
+        margin-left: 20px;
+        display: inline-block;
+        /* align-items: center; */
+
+    }
+
+    #btngreenStars i.fa.fa-angle-double-right {
+        margin-left: 3px;
+        /* Adjust the value as needed */
+    }
+
+    .testcenter-tabs {
+        /* border: 2px solid #E4E1DA; */
+        border-radius: 4px 0 0 4px;
+    }
+
+    .current-activity {
+        background-color: #012951;
+        color: #fff;
+        font-size: 16px;
+        height: 40px;
+        margin: 0 !important;
+        border-bottom: 3px solid #e8e8ea;
+        width: 100%;
+    }
+
+    .act-label,
+    .act-name {
+        margin-left: 5%;
+        /* margin-top: 8px; */
+    }
+
+    .status-row {
+        background-color: #b2beca;
+        padding: 5px;
+        width: 99.%;
+        margin: 0px;
+    }
+
+    .row.status-row {
+        margin: 0;
+        height: 60px;
+    }
+
+    #refresh {
+        float: right;
+    }
+
+    .refresh-icons {
+        float: right;
+        width: 50%;
+    }
+
+    #filterdiv {
+        width: 100%;
+        height: auto;
+        z-index: 1;
+        display: none;
+    }
+
+    .fa {
+        cursor: pointer;
+    }
+
+    #filterdiv>span {
+        display: block;
+        padding: 5px;
+        text-align: center;
+        cursor: pointer;
+    }
+
+    .status-divs {
+        float: left;
+        font-size: 16px;
+        margin-left: 2%;
+        margin-top: 6px;
+        text-align: center;
+        vertical-align: middle;
+        width: 12% !important;
+
+    }
+
+    .of-lable {
+        font-size: 12px;
+    }
+
+    .status-numbers span {
+        /*padding-top: 14px;*/
+        vertical-align: middle;
+    }
+
+    .csubCount-indicator {
+        background-color: #00b0f0;
+    }
+
+    .cgradeCount-indicator {
+        background-color: #00b050;
+    }
+
+    .cstarCount-indicator {
+        background-color: #0f0;
+    }
+
+    .crstarCount-indicator {
+        background-color: #c30;
+    }
+
+    .indicator {
+
+        display: inline-block;
+        float: left;
+        height: 25px;
+        width: 20%;
+        padding: 10px;
+    }
+
+    .login-count-indicator {
+        background-color: #FF6B3C;
+    }
+
+    .status-numbers.logincount-status-numbers {
+        background-color: #ffe1d8;
+    }
+
+    .status-numbers.csubCount-status-numbers {
+        background-color: #cceffc;
+    }
+
+    .status-numbers.cgradeCount-status-numbers {
+        background-color: #ccefdc;
+    }
+
+    .status-numbers.cstarCount-status-numbers {
+        background-color: #ccffcc;
+    }
+
+    .status-numbers.crstarCount-status-numbers {
+        background-color: #f4d6cc;
+    }
+
+    .status-numbers {
+        background-color: #fff;
+        float: right;
+        width: 100%;
+    }
+
+    .status-div {
+        margin-left: 0%;
+        margin-right: 0%;
+        width: 100%;
+    }
+
+    #status-div {
+        margin-top: 15px;
+        width: 10% !important;
+    }
+
+    #rowclick th {
+        text-align: center;
+    }
+
+    .status-label {
+        color: #fff;
+    }
+
+    .star-img {
+        color: #fff;
+    }
+
+    .statuscounts {
+        padding-top: 12px;
+    }
+
+    .kmit-status,
+    #switch-label {
+        display: none;
+    }
+
+    #switch {
+        float: right;
+    }
+
+    #reset-logins {
+        margin-top: 5px !important;
+        cursor: pointer;
+    }
+
+    #complete {
+        display: none;
+    }
+
+    #show {
+        width: 45%;
+        margin-left: 2%;
+    }
+
+    #hide {
+        width: 45%;
+        margin-left: 4%;
+    }
+</style>
+
+
+<style>
+    .nav-tabs:nth-child(1) {
+        /* display: block; */
+    }
+
+    .tabs-left>.nav-tabs {
+        border: 1px solid #ddd;
+        padding: 5px;
+        margin-right: 5px;
+    }
+
+    .tabs-left>.nav-tabs a {
+        border: none;
+    }
+
+    .tabs-left>.nav-tabs .active>a,
+    .tabs-left>.nav-tabs .active>a:hover,
+    .tabs-left>.nav-tabs .active>a:focus {
+        border: none;
+        border-bottom: 1px solid #ddd;
+        border-right: none;
+
+    }
+
+    /*added from myreports page of teacher*/
+
+    .tabs-left>.nav-tabs {
+        border: none;
+        padding: 5px;
+        margin-right: 5px;
+        display: inline-flex;
+    }
+
+    .tab-content {
+        box-sizing: border-box;
+        border: 1px solid #ddd;
+        top: 5px;
+        /* padding-left: 150px; */
+        /* padding-right: 5px; */
+        /* margin-left: 14.5%; */
+        padding-left: 3px;
+        height: auto;
+        /* transition: none; */
+        /* position: relative; */
+    }
+
+    .tabs-left>.nav-tabs a {
+        border-color: #c3c3c3 !important;
+        border-style: solid !important;
+        border-width: 1px !important;
+        background-color: #FFF;
+    }
+
+    .tabs-left>.nav-tabs>li>a {
+        border-radius: 0;
+        color: #01366a !important;
+        padding-left: 30px;
+    }
+
+
+    .tabs-left>.nav-tabs .active>a,
+    .tabs-left>.nav-tabs .active>a:hover,
+    .tabs-left>.nav-tabs .active>a:focus {
+
+        border-left: 4px solid rgb(234, 102, 69) !important;
+        color: #ea6645 !important;
+
+    }
+
+    .tabs-left>.nav-tabs>li>a:hover {
+        background-color: #FFF !important;
+        color: #ea6645 !important;
+    }
+
+    .tabs-left>.nav-tabs>li>a>i,
+    .tabs-left>.nav-tabs>li>span>i {
+        padding-left: 5px;
+    }
+
+    .nav.nav-tabs.tabs-left li.active {
+        border-left: 4px solid rgb(234, 102, 69) !important;
+    }
+
+    .nav.nav-tabs.tabs-left li.active a {
+        color: #ea6645 !important;
+    }
+
+    .testcenter-tabs.nav-tabs>li>a {
+        font-size: 15px;
+        /* Adjust the font size to your preference */
+        height: 45px;
+        width: 140px;
+    }
+
+    .testcenter-tabs.nav-tabs>li>a {
+        display: flex;
+        align-items: center;
+        /* justify-content: center; */
+        text-align: center;
+    }
+
+    /* Center text within the nested list items (dropdown items) */
+    .testcenter-tabs.nav-tabs>li>ul>li>a {
+        display: flex;
+        align-items: center;
+        /* justify-content: center; */
+        /* text-align: center;  */
+    }
+
+
+    /* .nav-tabs.course-detail-tabs {  
+    margin-bottom:-5px;
+  }  */
+
+    .nav-tabs.course-detail-tabs li {
+        list-style: none;
+        padding: 10px;
+        display: inline-block;
+        margin-top: 10px;
+    }
+
+    .nav-tabs.course-detail-tabs a {
+        color: grey;
+    }
+
+    .course-detail-tabs a.current {
+        /*  styles for the active tab link */
+        /* color:orange; */
+        border: 2px solid #ddd;
+        border-radius: 0;
+        border-width: 3px;
+        padding: 12px;
+        color: #333;
+    }
+
+    .course-detail-tabs a:hover {
+        border-radius: 0;
+        border: 2px solid #ddd;
+        border-width: 1px;
+        padding: 12px;
+
+    }
+
+    /* end of styles for teacher tabs css */
+</style>
+
+
+<style>
+    select,
+    textarea,
+    input[type="text"],
+    input[type="password"],
+    input[type="datetime"],
+    input[type="datetime-local"],
+    input[type="date"],
+    input[type="month"],
+    input[type="time"],
+    input[type="week"],
+    input[type="number"],
+    input[type="email"],
+    input[type="url"],
+    input[type="search"],
+    input[type="tel"],
+    input[type="color"],
+    .uneditable-input {
+        display: inline-block;
+        height: 30px !important;
+        padding: 4px 6px;
+        margin-bottom: 9px;
+        font-size: 13px;
+        line-height: 18px;
+        color: #555;
+        border-radius: 4px;
+        vertical-align: middle;
+    }
+
+    .tleft {
+        float: left;
+        width: 49.5%;
+        height: 130px;
+    }
+
+    .sta {
+        border: 1px solid gray;
+        margin-top: 10px;
+        float: left;
+        width: 100%;
+        height: 75px;
+    }
+
+    .sub {
+        width: 23%;
+        border-right: 1px solid #808080;
+        padding: 15px 10px;
+        font-size: 16px;
+        float: left;
+        height: 45px;
+
+    }
+
+    .subp {
+        margin-top: 5px;
+        font-size: 16px;
+        padding-top: 0px;
+    }
+
+    .subp2 {
+        margin-top: 2px;
+        font-size: 14px;
+    }
+
+    .report {
+        border: 1px solid #808080;
+        margin-top: 3px;
+        padding: 0px;
+        float: right;
+        width: 100%;
+    }
+
+    .con {
+        width: 100%;
+    }
+
+    .container-demo {
+        /* width: 1270px;
+  height:600px;
+  margin-right:0;
+  margin-left:0px;
+  padding-left:0;
+  padding-right:0; */
+    }
+
+
+    .repo {
+        margin-top: 10px;
+        width: 100%;
+        height: 350px;
+        float: left;
+        padding-top: 10px;
+    }
+
+    #panel,
+    #flip {
+        padding: 5px;
+        text-align: center
+    }
+
+    p,
+    fieldset,
+    table,
+    pre {
+        margin-bottom: 0em !important;
+    }
+
+    meter {
+        font-size: 6px;
+        margin-top: 5px;
+        width: 85%;
+    }
+
+    #flip {
+        color: #FFF;
+        text-shadow: 0px -1px 0px rgba(0, 0, 0, 0.25);
+        background-color: #048EC7;
+        background-image: linear-gradient(to bottom, #049CDB, #0378A9);
+        background-repeat: repeat-x;
+        border-color: rgba(0, 0, 0, 0.1) rgba(0, 0, 0, 0.1) rgba(0, 0, 0, 0.25);
+        text-align: center;
+        border-width: 0px 0px 1px 1px;
+        font-size: 15px;
+        font-family: Arial;
+        font-weight: bold;
+        color: #FFF;
+        cursor: pointer;
+    }
+
+    #fl {
+        text-align: right;
+        padding-right: 20px;
+        margin-top: 5px
+    }
+
+    .fa-angle-double-up,
+    .fa-angle-double-down {
+        font-size: 18px;
+    }
+
+    #ccourse {
+        float: left;
+        margin-right: 180px;
+        margin-left: 40px;
+    }
+
+    #ctopic {
+        float: left;
+        margin-right: 180px;
+    }
+
+    #cactivity {
+        float: left;
+        margin-right: 180px;
+    }
+
+    #panel {
+        display: block;
+    }
+
+    #t01 th,
+    td {
+        padding: 5px;
+        text-align: center;
+        border: 1px solid black;
+        font-size: 12px;
+    }
+
+    table#t01 {
+        width: 100%;
+        border: 0px solid gray;
+        border-collapse: collapse;
+    }
+
+
+
+    #progressBar {
+        width: 400px;
+        height: 22px;
+        border: 1px solid #111;
+        background-color: #292929;
+    }
+
+    #progressBar div {
+        height: 100%;
+        color: #fff;
+        text-align: right;
+        line-height: 22px;
+        /* same as #progressBar height if we want text middle aligned */
+        width: 0;
+        background-color: #0099ff;
+    }
+
+    /* .btn {
+  background: #3498db;
+  background-image: -webkit-linear-gradient(top, #3498db, #2980b9);
+  background-image: -moz-linear-gradient(top, #3498db, #2980b9);
+  background-image: -ms-linear-gradient(top, #3498db, #2980b9);
+  background-image: -o-linear-gradient(top, #3498db, #2980b9);
+  background-image: linear-gradient(to bottom, #3498db, #2980b9);
+  font-family: Arial;
+  color: #ffffff;
+  font-size: 15px;
+  padding: 5px 18px 6px 18px;
+  text-decoration: none;
+} */
+
+    /* .btn:hover {
+  background: #3cb0fd;
+  background-image: -webkit-linear-gradient(top, #3cb0fd, #3498db);
+  background-image: -moz-linear-gradient(top, #3cb0fd, #3498db);
+  background-image: -ms-linear-gradient(top, #3cb0fd, #3498db);
+  background-image: -o-linear-gradient(top, #3cb0fd, #3498db);
+  background-image: linear-gradient(to bottom, #3cb0fd, #3498db);
+  text-decoration: none;
+} */
+    .CSSTableGenerator {
+        overflow: auto;
+    }
+
+    .CSSTableGenerator tbody {
+        height: auto;
+    }
+
+
+    tbody tr td:first-child {
+        text-align: center;
+    }
+
+    tbody tr td:last-child {
+        text-align: center;
+    }
+
+    tbody tr th:first-child {
+        text-align: center !important;
+    }
+
+    tbody tr th:last-child {
+        text-align: center !important;
+    }
+
+    .navbar {
+        margin-bottom: 0px;
+    }
+
+    thead {
+        cursor: pointer;
+    }
+
+    td {
+        height: 30px;
+    }
+
+    #t01 img {
+        padding: 5px;
+    }
+
+    .sta {
+        border: 1px solid #808080;
+        margin-top: 0px;
+        float: left;
+        width: 100%;
+        height: 45px;
+    }
+
+    .sub {
+        width: 23%;
+        border-right: 1px solid #808080;
+        padding: 2px 10px;
+        font-size: 16px;
+        float: left;
+        height: 42px;
+    }
+
+    .repo {
+        margin-top: 0px;
+        width: 100%;
+        height: 350px;
+        float: left;
+        padding-top: 5px;
+        padding-left: 5px;
+        padding-right: 5px;
+    }
+
+    .report {
+        border: 1px solid #808080;
+        margin-top: 3px;
+        padding: 0px;
+        float: right;
+        width: 100%;
+        height: 750px;
+        margin-bottom: 30px;
+    }
+
+    #fl {
+        height: 20px;
+    }
+
+    .showhide {
+        border: none;
+        background: none;
+        cursor: pointer;
+    }
+
+    .show {
+        cursor: pointer !important;
+    }
+
+    button[disabled],
+    html input[disabled] {
+        cursor: not-allowed !important;
+    }
+
+    .pagecover-onload {
+        display: none;
+        position: absolute;
+        width: 95%;
+        background-color: rgb(255, 255, 255);
+        z-index: 300;
+        opacity: 0.9;
+        height: 800px;
+        top: 60px;
+        margin-left: -10px;
+    }
+
+    .pagecover {
+        display: none;
+    }
+
+    .watchlist {
+        cursor: pointer;
+    }
+
+    #current-activity {
+        font-weight: bold;
+    }
+
+    /*#current-activity {
+animation: blinker 2.7s cubic-bezier(.5, 0, 1, 1) infinite alternate;
+}
+@keyframes blinker {
+from { opacity: 1; }
+to { opacity: 0; }
+}*/
+
+
+    /* Test Center Css */
+    table tbody tr {
+        border-bottom: 1px grey;
+    }
+
+    .sta {
+        margin: 5px;
+        border: 0px;
+    }
+
+    table tbody tr td {
+        border: 1px solid #E4E1DA;
+    }
+
+    .sub {
+        border: 1px solid #E4E1DA;
+    }
+
+    #show {
+        background: transparent;
+        background-image: none;
+        background-repeat: repeat-x;
+    }
+
+    table {
+        width: 100%;
+    }
+
+    #myTable thead tr th {
+        padding: 8px !important;
+        font-size: 15px;
+    }
+
+    table thead tr th {
+        padding: 8px !important;
+        font-size: 15px;
+        background-color: #ea6645;
+        color: white;
+    }
+
+    #myTable tbody tr td {
+        border: 0px;
+    }
+
+    table thead tr th,
+    table thead tr td {
+        font-size: 14px !important;
+        font-style: normal;
+        text-align: center;
+    }
+
+    .container,
+    .navbar-static-top .container,
+    .navbar-fixed-top .container,
+    .navbar-fixed-bottom .container {
+        width: 99% !important;
+        padding: 5px !important;
+    }
+
+    .tleft {
+        float: left;
+        height: auto;
+        width: 30%;
+    }
+
+    .tright {
+        padding-left: 5px;
+        padding-right: 5px;
+
+        height: auto;
+
+    }
+
+    .report {
+        border: 0px solid #808080;
+        margin-top: 3px;
+        padding: 0px;
+        float: right;
+        width: 100%;
+        height: 695px;
+        margin-bottom: 30px;
+    }
+
+    #stu-section {
+        width: 100px !important;
+        margin-bottom: 0px !important;
+    }
+</style>
+<style>
+    .sub {
+        width: 10% !important;
+    }
+
+    .tright table tr td:nth-child(2) {
+        font-weight: bold;
+    }
+
+    .tleft tr td:first-child {
+        width: 20%;
+        font-weight: bold;
+
+    }
+
+    .tright table tr:hover td {
+        background-color: transparent !important;
+    }
+
+    .tleft table tr:hover td {
+        background-color: transparent !important;
+    }
+
+    .tleft tr td {
+        padding: 5px;
+        line-height: 12px;
+        vertical-align: top;
+        font-size: 12px !important;
+    }
+
+    .coursetab tbody tr:first-child td {
+        background-color: rgb(228, 228, 228) !important;
+    }
+
+    .tleft tbody tr td:last-child {
+        text-align: left;
+    }
+
+    #show {
+        background-color: rgb(70, 165, 70);
+        color: #FFF;
+        font-size: 12px;
+        padding: 6px 22px;
+        display: inline-block;
+        float: left;
+    }
+
+    #hide {
+        color: #FFF;
+        display: inline-block;
+        font-size: 12px;
+        padding: 6px 22px;
+        float: left;
+        background-color: rgb(157, 38, 29);
+        margin-left: 8%;
+    }
+
+    #complete {
+        background-color: red;
+        color: #FFF;
+    }
+
+    .stopclose {
+        background-color: red;
+        color: rgb(255, 255, 255);
+        display: inline-block;
+        font-size: 12px;
+        padding: 2px 20px;
+        float: left;
+        margin-left: 8%;
+    }
+
+    .stopclose:hover {
+        background-color: red;
+    }
+
+    .showhide:hover {
+        color: #fff;
+    }
+
+    #titile-sta {
+        text-align: center ! important;
+        float: left;
+        width: 95%;
+    }
+
+    /* input[type:"button"]:hover, input[type:"button"]:focus{
+                                                  -moz-border-bottom-colors: none;
+                                                  -moz-border-left-colors: none;
+                                                  -moz-border-right-colors: none;
+                                                  -moz-border-top-colors: none;
+                                                  background-color: #F5F5F5;
+                                                  background-image: linear-gradient(to bottom, #FFF, #E6E6E6);
+                                                  background-repeat: repeat-x;
+                                                  border-color: rgba(0, 0, 0, 0.1) rgba(0, 0, 0, 0.1) #B3B3B3;
+                                                  border-image: none;
+
+                                              } */
+    .tleft {
+        width: 29% !important;
+    }
+
+    #stas td {
+        text-align: center !important;
+        font-weight: bold;
+    }
+
+    #stas td {
+        line-height: 16px;
+        font-size: 12px !important;
+        font-style: normal;
+        border: 0px solid #DDD;
+        padding: 0px;
+        color: #655C5C;
+        text-align: center;
+        color: #655C5C;
+    }
+
+    #stas tr:hover td {
+        background-color: transparent !important;
+    }
+
+    #panel {
+        height: 140px;
+    }
+
+    #stas {
+        /*margin:5px 5px 5px 5px;*/
+        width: 99%;
+    }
+
+    #coursename {
+        width: 100%;
+        height: 75px;
+        border: 0px solid rgb(243, 240, 240);
+        background-color: rgb(118, 139, 149);
+        box-shadow: 0px 0px 1px rgba(0, 0, 0, 0.6);
+        font-size: 24px;
+        font-weight: bold;
+        color: white;
+        vertical-align: middle;
+        line-height: 75px;
+    }
+
+    #topicname {
+        margin-top: 5px;
+        width: 100%;
+        height: 35px;
+        border: 0px solid rgb(243, 240, 240);
+        background-color: rgb(118, 139, 149);
+        box-shadow: 0px 0px 1px rgba(0, 0, 0, 0.6);
+        font-size: 16px;
+        font-weight: bold;
+        color: white;
+        vertical-align: middle;
+        padding-top: 4px;
+    }
+
+    #fl {
+        height: 16px !important;
+        line-height: 16px !important;
+        vertical-align: middle !important;
+        margin-top: 0px !important;
+    }
+
+    #myTable {
+        padding: 2px !important;
+
+        line-height: 18px !important;
+        font-size: 12px !important;
+        font-style: normal !important;
+        vertical-align: middle !important;
+
+    }
+
+    #myTable thead tr th,
+    #t01 thead tr th,
+    .teacheragents-table thead tr th {
+        padding: 3px !important;
+        background-color: #ea6645;
+        background-image: linear-gradient(to bottom, #ea6645, #ea6645);
+        color: #FFF !important;
+        background-repeat: repeat-x;
+
+        font-weight: bold !important;
+    }
+
+    #myTable thead tr th {
+        padding: 3px !important;
+        font-size: 15px;
+    }
+
+    #myTable tbody tr td,
+    .teacheragents-table tbody tr td {
+
+        padding: 2px;
+        border: 1px solid #e4e1da;
+        vertical-align: middle;
+    }
+
+    #head td {
+        color: #000 !important;
+        background-color: #D3E0EA !important;
+    }
+
+    #stas tr:hover td {
+        background-color: inherit !important;
+    }
+
+    #stas td {
+        line-height: 18px;
+        font-size: 12px !important;
+        font-style: normal;
+        border: 0px solid #DDD;
+        padding: 0px;
+        color: #655C5C;
+        vertical-align: middle !important;
+        background-color: #F8F2E5;
+    }
+
+    #fil {
+        color: #000 !important;
+        background-color: white !important;
+    }
+
+    #ref {
+        vertical-align: middle;
+        width: 21%;
+        color: #787676 !important;
+        background-color: #FFF !important;
+    }
+
+    .status-text {
+        display: block;
+        font-size: 9px ! important;
+        text-align: center;
+        font-weight: normal;
+        line-height: 12px;
+    }
+
+    button.disabled,
+    input.form-submit.disabled,
+    input.disabled[type="button"],
+    input.disabled[type="submit"],
+    input.disabled[type="reset"],
+    button[disabled],
+    input.form-submit[disabled],
+    input[type="button"][disabled],
+    input[type="submit"][disabled],
+    input[type="reset"][disabled] {
+        box-shadow: none;
+        opacity: 0.25 !important;
+        background-image: none !important;
+    }
+
+    button,
+    input.form-submit,
+    input[type="button"],
+    input[type="submit"],
+    input[type="reset"] {
+        background-image: none !important;
+    }
+
+    .activity-status-img {
+        margin-right: 5px;
+        padding-bottom: 2px;
+        width: 10px;
+    }
+
+    #warn-msg {
+        font-size: 8px;
+        display: block;
+        margin-top: 10px;
+    }
+
+    /*tabs css*/
+
+    .example {
+        height: auto;
+        width: 100%;
+        background-color: white;
+        margin-bottom: 15px;
+        margin-top: 2px;
+    }
+
+    #bar {
+        display: none;
+    }
+
+    #btnFoo,
+    #btnBar,
+    #btngreenStars,
+    #btnredStars {
+
+        cursor: pointer;
+    }
+
+    #btnFoo:hover,
+    #btnBar:hover {
+        text-decoration: none;
+    }
+
+    .current {
+        color: #555;
+        border: 2px solid !important;
+        background-color: #FFF !important;
+        border-width: 2px !important;
+        border-style: solid;
+        border-color: #DDD #DDD transparent !important;
+        -moz-border-top-colors: none;
+        -moz-border-right-colors: none;
+        -moz-border-bottom-colors: none;
+        -moz-border-left-colors: none;
+        border-image: none;
+        cursor: default;
+        border-radius: 4px 4px 0px 0px;
+    }
+
+    .tleft {
+        width: 22% !important;
+    }
+
+    #flip {
+        display: none;
+    }
+
+    #t01 th {
+        padding: 5px;
+        text-align: center;
+        border: 0px solid #ccc !important;
+        padding: 3px !important;
+        background-color: #e5b467 !important;
+    }
+
+    #bar {
+        /* margin-top: 2px;border:0px;border-top: 1px solid #E4E1DA; */
+    }
+
+    #bar .tright {
+        margin-top: 10px;
+        width: 100% !important;
+        height: 150px !important;
+    }
+
+    #foo .tright {
+        margin-top: 10px;
+        width: 100%;
+        height: 150px !important;
+
+    }
+
+    .stopped {
+        color: rgb(157, 38, 29);
+    }
+
+    .started {
+        color: rgb(70, 165, 70);
+    }
+
+    .closed {
+        color: black;
+    }
+
+    .current-progress {
+
+        font-weight: bold;
+        color: #A17C43;
+        float: left;
+        padding-left: 2%;
+        width: 100%;
+    }
+
+    .progress-activity {
+        color: rgb(70, 165, 70);
+
+    }
+
+    #current-activity {
+        display: none;
+    }
+
+    .act-refresh {
+        cursor: pointer;
+    }
+
+    #page-content {
+        margin-bottom: 40px;
+        margin-top: 5px;
+    }
+
+    #panel .tright {
+        width: 100%;
+    }
+
+    .course-topic {
+        float: right;
+        text-align: right;
+        margin-right: 20px;
+        font-weight: bold;
+        color: #FFFFFF;
+        font-size: 10px;
+        margin-top: -5px;
+    }
+
+    .course-topic span {
+        background-color: rgb(118, 139, 149);
+        border-radius: 5px;
+        padding: 5px;
+    }
+
+    .current-progress {
+        background-color: rgb(118, 139, 149);
+        padding: 1px;
+        color: #FFFFFF;
+    }
+
+    .progress-activity {
+        color: #FFFFFF;
+    }
+
+    .current-progress-div {
+        font-weight: bold;
+        background-color: rgb(204, 204, 204);
+        padding: 4px;
+        height: 20px;
+        text-align: center;
+        margin-top: 3px;
+
+    }
+
+    .status-info {
+        height: 40px;
+        width: 100%;
+    }
+
+    .control-panel {
+        float: right;
+        margin-right: 10px;
+        /* padding-left:5px; */
+        /* padding-right:5px; */
+    }
+
+    .control-panel-text {
+        cursor: pointer;
+    }
+
+    #ctrl-panel {
+        font-size: 9px;
+        font-weight: bold;
+        cursor: pointer;
+    }
+
+    #greenstar_sub_list {
+        position: absolute;
+    }
+
+    .act-sorter {
+        float: right;
+        position: relative;
+        z-index: 99;
+    }
+
+    .act-sorter-select {
+        height: 25px !important;
+        width: 80% !important;
+    }
+
+    .arrow-symbol {
+        cursor: pointer;
+    }
+
+    /*end tabs css*/
+</style>
+
+<style>
+    .act-sorter-select {
+        height: auto !important;
+        width: 140px !important;
+    }
+
+    #t01 {
+        margin-top: 0px !important;
+    }
+
+    .page-header-headings {
+        display: none !important;
+    }
+
+    #page-header {
+        margin-left: 0px !important;
+        margin-top: 0px;
+        display: block !important;
+    }
+
+    .confirmation-modal.modal.fade.in {
+        display: table !important;
+        left: 48%;
+        top: 10% !important;
+        background: transparent;
+        box-shadow: none !important;
+        border: 0px !important;
+    }
+
+    .modal-title {
+
+        text-transform: capitalize;
+    }
+
+    #reset-logins {
+        background-color: #012951;
+        color: #fff;
+        border: 1px solid #fff;
+        padding: 8px;
+        border-radius: 0px;
+
+    }
+
+    /* .container-demo{
+margin-right:0;
+margin-left:0;
+ }
+#region-main-box{
+margin-left:0;
+} */
+    .container {
+        padding-left: 0;
+        padding-right: 0;
+        margin-left: 0px;
+        margin-right: 0;
+    }
+
+    #page.drawers {
+        padding-left: 0;
+        padding-right: 0;
+        margin-top: 20px;
+        /* margin-left:10;
+margin-right:10; */
+    }
+
+    #page-content {
+        width: 1200px;
+        height: 600px;
+        margin-right: 0;
+        margin-left: -180px;
+        margin-top: 0px;
+        padding-left: 0;
+        padding-right: 0;
+    }
+
+    .current-activity {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .current-activity .act-name {
+        flex: 1;
+        text-align: center;
+    }
+
+    .text-green {
+        color: #006400 !important;
+    }
+</style>

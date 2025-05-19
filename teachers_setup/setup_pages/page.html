@@ -1,0 +1,99 @@
+<!-- if virtual environment  /opt/jupyterhub/lib/python3.10/site-packages/nativeauthenticator/templates/page.html -->
+<!--  normal setup /usr/local/lib/python3.10/dist-packages/nativeauthenticator/templates/page.html -->
+{% extends "templates/page.html" %}
+
+{% block nav_bar_left_items %}
+{{ super() }}
+<li class="nav-item"><a class="nav-link" href="{{base_url}}change-password">Change Password</a></li>
+{% if user.admin %}
+    <li class="nav-item" style="cursor:pointer;"><a class="nav-link" id="testcenter">Test center</a></li>
+    <li class="nav-item" style="cursor:pointer;"><a class="nav-link" id="manageusers">Manage Users</a></li>
+    <li class="nav-item"><a class="nav-link" href="{{base_url}}authorize">Authorize Users</a></li>
+{% elif "grader-" in user.name %}
+    <li class="nav-item" style="cursor:pointer;"><a class="nav-link" id="testcenter">Test center</a></li>
+{% else %}
+    <li class="nav-item" style="cursor:pointer;"><a class="nav-link" id="studentreport">Report</a></li>
+{% endif %}
+<script>
+    const user = "{{ user }}"
+    const currentURL = window.location.href;
+    const obj = new URL(currentURL);
+    if (user.includes('User(kmit') || user.includes("User(tele")){
+        document.getElementById("testcenter").onclick = function () { myTestcenter() };
+        document.getElementById("manageusers").onclick = function () { myManageusers() };
+    } else if (user.includes('grader-')) {
+        document.getElementById("testcenter").onclick = function () { myTestcenter() };
+    } else
+        document.getElementById("studentreport").onclick = function () { myStudentReport() };
+    async function getAccessToken() {
+        const response = await fetch(`http://${obj.hostname}:${obj.port ? `${obj.port}` : ''}/hub/api/user`);
+        if (!response.ok) {
+            console.log('User data fetch failed with status:', response.status);
+            return;
+        }
+        const data = await response.json();
+        const username = data?.name;
+        const secretKey = "Tantrik541$$";
+        function encrypt(text, key) {
+            let result = '';
+            for (let i = 0; i < text.length; i++) {
+                const charCode = text.charCodeAt(i);
+                const keyCode = key.charCodeAt(i % key.length);
+                result += String.fromCharCode(charCode ^ keyCode);
+            }
+            return btoa(result);
+        }
+        function generateRandomString(length) {
+            const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+            let result = '';
+            const charactersLength = characters.length;
+            for (let i = 0; i < length; i++) {
+                result += characters.charAt(Math.floor(Math.random() * charactersLength));
+            }
+            return result;
+        }
+        const message = generateRandomString(100) + '$$$' + username;
+        const encryptedText = encrypt(message, secretKey);
+        return encryptedText
+    }
+    
+    async function myManageusers() {
+        const manageUsersLink = document.querySelector('#manageusers');
+        if (manageUsersLink) {
+            try {
+                const access_token = await getAccessToken()
+                const url = `${obj.protocol}//${obj.hostname}:8581/manageusers?access_token=${access_token}`;
+                window.open(url, '_blank');
+            } catch (error) {
+                console.log('Error:', error);
+            }
+        }
+    }
+    async function myTestcenter() {
+        const testCenterLink = document.querySelector('#testcenter');
+        if (testCenterLink) {
+            try {
+                const access_token = await getAccessToken()
+                const url = `${obj.protocol}//${obj.hostname}:8581?access_token=${access_token}`;
+                window.open(url, '_blank');
+            } catch (error) {
+                console.log('Error:', error);
+            }
+        }
+    }
+    async function myStudentReport() {
+        console.log("rdtfyguhi")
+        const testCenterLink = document.querySelector('#studentreport');
+        if (testCenterLink) {
+            try {
+                const access_token = await getAccessToken()
+                const url = `${obj.protocol}//${obj.hostname}:8581/studentreport?access_token=${access_token}`;
+                window.open(url, '_blank');
+            } catch (error) {
+                console.log('Error:', error);
+            }
+        }
+    }
+</script>
+
+{% endblock %}
