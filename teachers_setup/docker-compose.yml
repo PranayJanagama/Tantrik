@@ -9,7 +9,7 @@ services:
       - ./dist-packages/nativeauthenticator/templates:/usr/local/lib/python3.10/dist-packages/nativeauthenticator/templates
       - ./dist-packages/jupyterhub/apihandlers:/usr/local/lib/python3.10/dist-packages/jupyterhub/apihandlers
       - ./exchange:/usr/local/share/nbgrader/exchange
-      # - ./home:/home
+      - ./home:/home
       - ./ssh_keys:/root/.ssh
       - ./srv/manage_assignments:/srv/manage_assignments
       - ./srv/nbgrader/jupyterhub:/srv/nbgrader/jupyterhub
