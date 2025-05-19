@@ -1,0 +1,19 @@
+services:
+  nbgrader:
+    image: teacher_setup
+    # network_mode: host
+    ports:
+      - 8000:8000
+      - 8581:8581
+    volumes:
+      - ./dist-packages/nativeauthenticator/templates:/usr/local/lib/python3.10/dist-packages/nativeauthenticator/templates
+      - ./dist-packages/jupyterhub/apihandlers:/usr/local/lib/python3.10/dist-packages/jupyterhub/apihandlers
+      - ./exchange:/usr/local/share/nbgrader/exchange
+      # - ./home:/home
+      - ./ssh_keys:/root/.ssh
+      - ./srv/manage_assignments:/srv/manage_assignments
+      - ./srv/nbgrader/jupyterhub:/srv/nbgrader/jupyterhub
+      - ./srv/nbgrader/nbgrader:/srv/nbgrader/nbgrader
+      - ./srv/shareddata:/srv/shareddata
+      - ./@jupyterlab:/usr/local/share/jupyter/lab/@jupyterlab
+    restart: always

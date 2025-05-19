@@ -1,0 +1,13 @@
+{
+  "base_url": "/services/course123/",
+  "hostname": "127.0.0.1",
+  "password": false,
+  "pid": 62,
+  "port": 9998,
+  "root_dir": "/home/grader-course123",
+  "secure": false,
+  "sock": "",
+  "token": "9f4678abfbe14183943491b151c68cca",
+  "url": "http://127.0.0.1:9998/services/course123/",
+  "version": "2.15.0"
+}

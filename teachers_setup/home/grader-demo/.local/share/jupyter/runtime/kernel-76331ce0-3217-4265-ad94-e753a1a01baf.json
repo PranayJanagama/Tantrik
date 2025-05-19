@@ -1,0 +1,13 @@
+{
+  "shell_port": 49085,
+  "iopub_port": 49341,
+  "stdin_port": 34209,
+  "control_port": 33561,
+  "hb_port": 52079,
+  "ip": "127.0.0.1",
+  "key": "cab0ce27-9caac62326feab42f94f0679",
+  "transport": "tcp",
+  "signature_scheme": "hmac-sha256",
+  "kernel_name": "python3",
+  "jupyter_session": "/home/grader-demo/demo/source/demo1/Churn_Modelling-1.ipynb"
+}

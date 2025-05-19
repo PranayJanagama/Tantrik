@@ -1,0 +1,13 @@
+{
+  "base_url": "/services/demo123/",
+  "hostname": "127.0.0.1",
+  "password": false,
+  "pid": 114,
+  "port": 10001,
+  "root_dir": "/home/grader-demo123",
+  "secure": false,
+  "sock": "",
+  "token": "FmiQ2cRhWpeubEZw",
+  "url": "http://127.0.0.1:10001/services/demo123/",
+  "version": "2.15.0"
+}

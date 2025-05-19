@@ -1,0 +1,13 @@
+{
+  "base_url": "/user/student1/",
+  "hostname": "127.0.0.1",
+  "password": false,
+  "pid": 198,
+  "port": 51243,
+  "root_dir": "/home/student1",
+  "secure": false,
+  "sock": "",
+  "token": "f9eb9996571c486faad9a35f91742f87",
+  "url": "http://127.0.0.1:51243/user/student1/",
+  "version": "2.15.0"
+}

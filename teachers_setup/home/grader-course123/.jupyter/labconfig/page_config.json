@@ -1,0 +1,6 @@
+{
+  "disabledExtensions": {
+    "@jupyter/nbgrader:create-assignment": false,
+    "@jupyter/nbgrader:formgrader": false
+  }
+}

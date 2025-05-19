@@ -1,0 +1,13 @@
+{
+  "base_url": "/user/grader-demo/",
+  "hostname": "127.0.0.1",
+  "password": false,
+  "pid": 220,
+  "port": 54867,
+  "root_dir": "/home/grader-demo",
+  "secure": false,
+  "sock": "",
+  "token": "5e7fd3403af740a782311056b0eb9a17",
+  "url": "http://127.0.0.1:54867/user/grader-demo/",
+  "version": "2.15.0"
+}

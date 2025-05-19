@@ -1,0 +1,13 @@
+{
+  "shell_port": 33143,
+  "iopub_port": 46573,
+  "stdin_port": 39383,
+  "control_port": 39421,
+  "hb_port": 52825,
+  "ip": "127.0.0.1",
+  "key": "4a3d359e-9b6e24aec10d0f98b6fd6478",
+  "transport": "tcp",
+  "signature_scheme": "hmac-sha256",
+  "kernel_name": "python3",
+  "jupyter_session": "/home/grader-course101/Untitled.ipynb"
+}

@@ -1,0 +1,13 @@
+{
+  "base_url": "/user/tele/",
+  "hostname": "127.0.0.1",
+  "password": false,
+  "pid": 141,
+  "port": 35147,
+  "root_dir": "/home/tele",
+  "secure": false,
+  "sock": "",
+  "token": "b8feca36ff5c4ae2a4c87e84abd49423",
+  "url": "http://127.0.0.1:35147/user/tele/",
+  "version": "2.15.0"
+}

@@ -1,0 +1,13 @@
+{
+  "shell_port": 40655,
+  "iopub_port": 52465,
+  "stdin_port": 46535,
+  "control_port": 56989,
+  "hb_port": 45767,
+  "ip": "127.0.0.1",
+  "key": "a95d39c4-fc5a8c5747431f95327819de",
+  "transport": "tcp",
+  "signature_scheme": "hmac-sha256",
+  "kernel_name": "python3",
+  "jupyter_session": "/home/grader-demo/demo/source/demo2/demo1.ipynb"
+}

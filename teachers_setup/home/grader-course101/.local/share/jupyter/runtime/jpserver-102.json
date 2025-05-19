@@ -1,0 +1,13 @@
+{
+  "base_url": "/user/grader-course101/",
+  "hostname": "127.0.0.1",
+  "password": false,
+  "pid": 102,
+  "port": 54827,
+  "root_dir": "/home/grader-course101",
+  "secure": false,
+  "sock": "",
+  "token": "8e208ab3e8bb4516827fad4e349a31cd",
+  "url": "http://127.0.0.1:54827/user/grader-course101/",
+  "version": "2.15.0"
+}
